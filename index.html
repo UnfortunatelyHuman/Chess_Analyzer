@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Chess Analyzer</title>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+    <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <div class="main-container">
+        <div id="eval-bar-container">
+            <div id="eval-score">0.0</div>
+            <div id="eval-bar-fill"></div>
+        </div>
+
+        <div id="board"></div>
+    </div>
+
+    <div class="panel">
+        <div id="move-class" style="display:none;"></div>
+        <div id="analysis-text">Waiting for game...</div>
+
+        <div class="btn-group">
+            <button id="btnPrev">◀</button>
+            <button id="btnNext" class="primary">Next ▶</button>
+        </div>
+
+        <div style="text-align:center; margin-top:10px;">
+            <a href="#" id="toggle-pgn">Paste PGN</a>
+        </div>
+        <div id="pgn-area">
+            <textarea id="pgnInput" placeholder="Paste your PGN here..."></textarea>
+            <button id="btnLoad" style="width:100%; margin-top:5px;">Analyze</button>
+        </div>
+    </div>
+
+    <script type="module" src="js/main.js"></script>
+</body>
+
+</html>

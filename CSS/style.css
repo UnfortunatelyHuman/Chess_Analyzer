@@ -1,0 +1,115 @@
+body {
+  font-family: "Segoe UI", sans-serif;
+  background: #202020;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0;
+  padding: 10px;
+}
+
+/* Layout Container */
+.main-container {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  width: 100%;
+  max-width: 600px;
+  margin-top: 20px;
+}
+
+/* Evaluation Bar */
+#eval-bar-container {
+  width: 20px;
+  height: 400px;
+  background: #555;
+  position: relative;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid #777;
+}
+#eval-bar-fill {
+  width: 100%;
+  height: 50%;
+  background: #fff;
+  position: absolute;
+  bottom: 0;
+  transition: height 0.5s ease;
+}
+#eval-score {
+  position: absolute;
+  top: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  color: #000;
+  font-weight: bold;
+  z-index: 10;
+}
+
+/* Board */
+#board {
+  width: 100%;
+  max-width: 400px;
+}
+
+/* Panel */
+.panel {
+  width: 100%;
+  max-width: 430px;
+  margin-top: 10px;
+}
+
+#analysis-text {
+  background: #2b2b2b;
+  padding: 15px;
+  border-radius: 8px;
+  min-height: 60px;
+  font-size: 15px;
+  line-height: 1.4;
+  color: #ccc;
+}
+
+/* Buttons */
+.btn-group {
+  display: flex;
+  gap: 5px;
+  margin-top: 10px;
+}
+button {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 6px;
+  background: #3c3c3c;
+  color: #ddd;
+  font-weight: bold;
+  cursor: pointer;
+}
+button.primary {
+  background: #81b64c;
+  color: white;
+}
+button:hover {
+  opacity: 0.9;
+}
+
+/* Utility */
+#pgn-area {
+  display: none;
+  width: 100%;
+  margin-top: 10px;
+}
+textarea {
+  width: 100%;
+  height: 100px;
+  background: #111;
+  color: #fff;
+  border: 1px solid #444;
+}
+#toggle-pgn {
+  color: #777;
+  font-size: 12px;
+  text-decoration: none;
+}
