@@ -1,0 +1,8 @@
+{
+  "name": "chess-analyzer",
+  "private": true,
+  "scripts": {
+    "start": "npx --yes http-server -p 8080 -a 0.0.0.0 -c-1",
+    "serve": "npx --yes http-server -p 8080 -a 0.0.0.0 -c-1"
+  }
+}

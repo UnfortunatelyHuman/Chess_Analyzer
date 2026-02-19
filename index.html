@@ -24,7 +24,18 @@
         </div>
 
         <div id="board-container">
-            <div id="board"></div>
+            <div id="board-wrapper">
+                <div id="board"></div>
+                <div id="board-selected-player-label" class="board-player-label"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="player-choice-panel" class="player-choice-panel" style="display: none;">
+        <p class="player-choice-title">Analyze moves for which player?</p>
+        <div class="player-choice-buttons">
+            <button type="button" id="btnAnalyzeWhite" class="player-choice-btn">White</button>
+            <button type="button" id="btnAnalyzeBlack" class="player-choice-btn">Black</button>
         </div>
     </div>
 
