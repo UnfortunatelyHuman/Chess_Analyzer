@@ -36,6 +36,16 @@ $(document).ready(function () {
 
 function loadGame() {
   let pgn = $("#pgnInput").val();
+
+  // Remove extra spaces from start/end
+  pgn = pgn.trim();
+
+  // Ensure there is an empty line between headers and moves
+  // We look for the last bracket ']' and the first move '1.'
+  if (!pgn.includes("\n\n") && pgn.includes("]")) {
+    // This adds a double line-break after the last ']'
+    pgn = pgn.replace(/]\s*(1\.)/, "]\n\n$1");
+  }
   if (game.load_pgn(pgn)) {
     moves = game.history({ verbose: true });
     game.reset();
