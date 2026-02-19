@@ -1,19 +1,34 @@
-export function updateEvalBar(score, isMate) {
-  // Limit bar visually between -5 and +5
+// ui.js - Handles all DOM manipulation and CSS changes
+
+export function updateCoach(title, text, sentiment) {
+  $("#coach-title").html(title);
+  $("#coach-text").html(text);
+
+  let color = "#ffd700"; // Neutral (Yellow)
+  if (sentiment === "bad") color = "#ff4444"; // Red
+  if (sentiment === "good") color = "#4CAF50"; // Green
+
+  $(".coach-bubble").css("border-left-color", color);
+  $("#coach-title").css("color", color);
+}
+
+export function updateEvalBar(score) {
+  // Clamp visual score between -5 and +5
   let visualScore = Math.max(-5, Math.min(5, score));
+  // Calculate percentage (0% = Black +5, 50% = Equal, 100% = White +5)
   let percent = ((visualScore + 5) / 10) * 100;
 
-  // Invert because in CSS height starts from bottom
-  $("#eval-bar-fill").css("height", percent + "%");
+  $("#eval-fill").css("height", percent + "%");
 
-  let text = isMate ? "MATE" : score > 0 ? "+" + score : score;
-  $("#eval-score").text(text);
+  // Format the text label
+  let label = score > 0 ? "+" + score.toFixed(1) : score.toFixed(1);
+  $("#eval-score").text(label);
 }
 
-export function showAnalysis(text) {
-  $("#analysis-text").text(text);
+export function toggleSetupMenu() {
+  $("#setup-area").slideToggle();
 }
 
-export function toggleSetup() {
-  $("#pgn-area").toggle();
+export function hideSetupMenu() {
+  $("#setup-area").hide();
 }

@@ -1,9 +1,9 @@
-// This is an ES6 Module
+// engine.js - Handles Web Worker and Stockfish Communication
+
 let stockfish = null;
 let isReady = false;
 
 export function initEngine(onMessageCallback) {
-  // Load Stockfish from online source
   const stockfishUrl =
     "https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.0/stockfish.js";
 
@@ -19,12 +19,13 @@ export function initEngine(onMessageCallback) {
 
       stockfish.postMessage("uci");
       isReady = true;
-      console.log("Engine Loaded");
-    });
+      console.log("Stockfish Engine Initialized");
+    })
+    .catch((err) => console.error("Failed to load engine:", err));
 }
 
 export function analyzePosition(fen) {
   if (!isReady) return;
   stockfish.postMessage("position fen " + fen);
-  stockfish.postMessage("go depth 15"); // Depth 15 is decent speed/quality balance
+  stockfish.postMessage("go depth 14"); // Depth 14 is fast but accurate enough for beginners
 }

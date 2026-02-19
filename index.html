@@ -17,30 +17,36 @@
 
 <body>
 
-    <div class="main-container">
+    <div class="app-container">
         <div id="eval-bar-container">
             <div id="eval-score">0.0</div>
-            <div id="eval-bar-fill"></div>
+            <div id="eval-fill"></div>
         </div>
 
-        <div id="board"></div>
+        <div id="board-container">
+            <div id="board"></div>
+        </div>
     </div>
 
-    <div class="panel">
-        <div id="move-class" style="display:none;"></div>
-        <div id="analysis-text">Waiting for game...</div>
+    <div class="coach-panel">
 
-        <div class="btn-group">
-            <button id="btnPrev">◀</button>
-            <button id="btnNext" class="primary">Next ▶</button>
+        <div class="coach-bubble">
+            <div class="coach-avatar">🤖</div>
+            <div class="coach-content">
+                <span id="coach-title">I'm ready!</span>
+                <span id="coach-text">Load a PGN game to start your lesson.</span>
+            </div>
         </div>
 
-        <div style="text-align:center; margin-top:10px;">
-            <a href="#" id="toggle-pgn">Paste PGN</a>
+        <div class="controls">
+            <button id="btnPrev" class="secondary">◀ Back</button>
+            <button id="btnNext" class="primary">Next Move ▶</button>
         </div>
-        <div id="pgn-area">
-            <textarea id="pgnInput" placeholder="Paste your PGN here..."></textarea>
-            <button id="btnLoad" style="width:100%; margin-top:5px;">Analyze</button>
+
+        <div class="setup-toggle" id="toggle-setup">Paste PGN Game 👇</div>
+        <div id="setup-area">
+            <textarea id="pgnInput" placeholder='[Event "My Game"]...'></textarea>
+            <button id="btnLoad">Analyze Game</button>
         </div>
     </div>
 
