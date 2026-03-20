@@ -6,6 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chess Analyzer</title>
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
     <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
@@ -47,6 +51,62 @@
                 <div class="player-choice-buttons">
                     <button type="button" id="btnAnalyzeWhite" class="player-choice-btn">White</button>
                     <button type="button" id="btnAnalyzeBlack" class="player-choice-btn">Black</button>
+                </div>
+            </div>
+
+            <div id="move-list-container">
+                <div class="move-list-header">Moves</div>
+                <div class="move-list-body">
+                    <div class="move-row">
+                        <span class="move-number">1.</span>
+                        <span class="move-white">e4</span>
+                        <span class="move-black">e5</span>
+                    </div>
+                    <div class="move-row">
+                        <span class="move-number">2.</span>
+                        <span class="move-white">Nf3</span>
+                        <span class="move-black">Nc6</span>
+                    </div>
+                    <div class="move-row">
+                        <span class="move-number">3.</span>
+                        <span class="move-white">Bb5</span>
+                        <span class="move-black">a6</span>
+                    </div>
+                    <div class="move-row">
+                        <span class="move-number">4.</span>
+                        <span class="move-white">Ba4</span>
+                        <span class="move-black">Nf6</span>
+                    </div>
+                    <div class="move-row">
+                        <span class="move-number">5.</span>
+                        <span class="move-white">O-O</span>
+                        <span class="move-black">Be7</span>
+                    </div>
+                    <div class="move-row">
+                        <span class="move-number">6.</span>
+                        <span class="move-white">Re1</span>
+                        <span class="move-black">b5</span>
+                    </div>
+                    <div class="move-row">
+                        <span class="move-number">7.</span>
+                        <span class="move-white">Bb3</span>
+                        <span class="move-black">d6</span>
+                    </div>
+                    <div class="move-row">
+                        <span class="move-number">8.</span>
+                        <span class="move-white">c3</span>
+                        <span class="move-black">O-O</span>
+                    </div>
+                    <div class="move-row">
+                        <span class="move-number">9.</span>
+                        <span class="move-white">h3</span>
+                        <span class="move-black">Nb8</span>
+                    </div>
+                    <div class="move-row">
+                        <span class="move-number">10.</span>
+                        <span class="move-white">d4</span>
+                        <span class="move-black">Nbd7</span>
+                    </div>
                 </div>
             </div>
 
