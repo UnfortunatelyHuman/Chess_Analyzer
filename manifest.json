@@ -1,0 +1,19 @@
+{
+  "name": "Chess Analyzer",
+  "short_name": "ChessCoach",
+  "description": "A web-based chess coaching app powered by Stockfish.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#1a1a2e",
+  "theme_color": "#1a1a2e",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
