@@ -13,6 +13,8 @@ import {
   showPlayerChoice,
   hidePlayerChoice,
   updateBoardPlayerLabels,
+  renderMoveList,
+  highlightActiveMove,
 } from "./ui.js";
 
 let board = null;
@@ -98,6 +100,8 @@ function loadGame() {
     clearSuggestedMoveHighlight();
     clearLastMoveHighlight();
     hideSetupMenu();
+    renderMoveList(moves);
+    highlightActiveMove(-1);
     updateBoardPlayerLabels(whitePlayerName, blackPlayerName, null);
     showPlayerChoice(whitePlayerName, blackPlayerName, function (color) {
       analyzeForColor = color;
@@ -137,6 +141,7 @@ function nextMove() {
     board.position(game.fen(), true);
     currentMoveIndex++;
     highlightLastMove(move.from, move.to);
+    highlightActiveMove(currentMoveIndex - 1);
     pendingSelectedPlayerMove = true;
     updateCoach("Thinking...", "Finding the best move for you...", "neutral");
     analyzePosition(savedFen);
@@ -147,6 +152,7 @@ function nextMove() {
   board.position(game.fen(), true);
   currentMoveIndex++;
   highlightLastMove(move.from, move.to);
+  highlightActiveMove(currentMoveIndex - 1);
   updateCoach("Thinking...", "Calculating the best moves...", "neutral");
   analyzePosition(game.fen());
 }
@@ -160,6 +166,7 @@ function prevMove() {
     game.undo();
     board.position(game.fen(), true);
     currentMoveIndex--;
+    highlightActiveMove(currentMoveIndex - 1);
     if (currentMoveIndex > 0) {
       const prevMove = moves[currentMoveIndex - 1];
       highlightLastMove(prevMove.from, prevMove.to);

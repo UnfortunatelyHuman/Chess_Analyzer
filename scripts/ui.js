@@ -100,3 +100,57 @@ export function updateBoardPlayerLabels(whiteName, blackName, analyzeForColor) {
       : (blackName && blackName.trim() ? blackName.trim() : "Black");
   label.text(name).addClass("analyzing").show();
 }
+
+/** Render the move list from the parsed PGN moves array (chess.js verbose history). */
+export function renderMoveList(moves) {
+  const body = $(".move-list-body");
+  body.empty();
+
+  for (let i = 0; i < moves.length; i += 2) {
+    const moveNum = Math.floor(i / 2) + 1;
+    const whiteMove = moves[i];
+    const blackMove = i + 1 < moves.length ? moves[i + 1] : null;
+
+    const row = $('<div class="move-row"></div>');
+    row.append(`<span class="move-number">${moveNum}.</span>`);
+    row.append(
+      `<span class="move-white" data-move-index="${i}">${whiteMove.san}</span>`
+    );
+    if (blackMove) {
+      row.append(
+        `<span class="move-black" data-move-index="${i + 1}">${blackMove.san}</span>`
+      );
+    } else {
+      row.append('<span class="move-black"></span>');
+    }
+    body.append(row);
+  }
+}
+
+/** Highlight the active move in the move list and scroll it into view. */
+export function highlightActiveMove(moveIndex) {
+  $(".move-list-body .move-active").removeClass("move-active");
+
+  if (moveIndex < 0) return;
+
+  const target = $(`.move-list-body [data-move-index="${moveIndex}"]`);
+  if (target.length) {
+    target.addClass("move-active");
+
+    // Scroll the move-list-body so the active move stays visible
+    const container = $(".move-list-body")[0];
+    const el = target[0];
+    if (container && el) {
+      const elTop = el.offsetTop;
+      const elHeight = el.offsetHeight;
+      const containerHeight = container.clientHeight;
+      const scrollTop = container.scrollTop;
+
+      if (elTop < scrollTop) {
+        container.scrollTop = elTop;
+      } else if (elTop + elHeight > scrollTop + containerHeight) {
+        container.scrollTop = elTop + elHeight - containerHeight;
+      }
+    }
+  }
+}

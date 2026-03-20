@@ -314,6 +314,11 @@ body {
   background: rgba(129, 182, 76, 0.15);
   color: var(--accent-green);
 }
+.move-active {
+  background: rgba(129, 182, 76, 0.4) !important;
+  color: #fff !important;
+  border-radius: 2px;
+}
 
 /* ================================================================
    COACH PANEL  (sleek "Engine Evaluation" card)
