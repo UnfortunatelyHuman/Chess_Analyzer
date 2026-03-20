@@ -24,48 +24,56 @@
 
 <body>
 
-    <div class="app-container">
-        <div id="eval-bar-container">
-            <div id="eval-score">0.0</div>
-            <div id="eval-fill"></div>
-        </div>
+    <div class="main-layout">
 
-        <div id="board-container">
-            <div id="board-wrapper">
-                <div id="board"></div>
-                <div id="board-selected-player-label" class="board-player-label"></div>
+        <div class="app-container">
+            <div id="eval-bar-container">
+                <div id="eval-score">0.0</div>
+                <div id="eval-fill"></div>
             </div>
-        </div>
-    </div>
 
-    <div id="player-choice-panel" class="player-choice-panel" style="display: none;">
-        <p class="player-choice-title">Analyze moves for which player?</p>
-        <div class="player-choice-buttons">
-            <button type="button" id="btnAnalyzeWhite" class="player-choice-btn">White</button>
-            <button type="button" id="btnAnalyzeBlack" class="player-choice-btn">Black</button>
-        </div>
-    </div>
-
-    <div class="coach-panel">
-
-        <div class="coach-bubble">
-            <div class="coach-avatar">🤖</div>
-            <div class="coach-content">
-                <span id="coach-title">I'm ready!</span>
-                <span id="coach-text">Load a PGN game to start your lesson.</span>
+            <div id="board-container">
+                <div id="board-wrapper">
+                    <div id="board"></div>
+                    <div id="board-selected-player-label" class="board-player-label"></div>
+                </div>
             </div>
         </div>
 
-        <div class="controls">
-            <button id="btnPrev" class="secondary">◀ Back</button>
-            <button id="btnNext" class="primary">Next Move ▶</button>
+        <div class="side-panel">
+
+            <div id="player-choice-panel" class="player-choice-panel" style="display: none;">
+                <p class="player-choice-title">Analyze moves for which player?</p>
+                <div class="player-choice-buttons">
+                    <button type="button" id="btnAnalyzeWhite" class="player-choice-btn">White</button>
+                    <button type="button" id="btnAnalyzeBlack" class="player-choice-btn">Black</button>
+                </div>
+            </div>
+
+            <div class="coach-panel">
+
+                <div class="coach-bubble">
+                    <div class="coach-avatar">🤖</div>
+                    <div class="coach-content">
+                        <span id="coach-title">I'm ready!</span>
+                        <span id="coach-text">Load a PGN game to start your lesson.</span>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <button id="btnPrev" class="secondary">◀ Back</button>
+                    <button id="btnNext" class="primary">Next Move ▶</button>
+                </div>
+
+                <div class="setup-toggle" id="toggle-setup">Paste PGN Game 👇</div>
+                <div id="setup-area">
+                    <textarea id="pgnInput" placeholder='[Event "My Game"]...'></textarea>
+                    <button id="btnLoad">Analyze Game</button>
+                </div>
+            </div>
+
         </div>
 
-        <div class="setup-toggle" id="toggle-setup">Paste PGN Game 👇</div>
-        <div id="setup-area">
-            <textarea id="pgnInput" placeholder='[Event "My Game"]...'></textarea>
-            <button id="btnLoad">Analyze Game</button>
-        </div>
     </div>
 
     <script type="module" src="./scripts/main.js"></script>
