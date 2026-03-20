@@ -52,6 +52,24 @@ $(document).ready(function () {
   $("#btnPrev").on("click", prevMove);
   $("#btnLoad").on("click", loadGame);
   $("#toggle-setup").on("click", toggleSetupMenu);
+
+  // Keyboard navigation: Arrow keys
+  $(document).on("keydown", function (e) {
+    if (e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT") return;
+    if (e.key === "ArrowRight") {
+      e.preventDefault();
+      nextMove();
+    } else if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      prevMove();
+    }
+  });
+
+  // Clickable move list: jump to any move
+  $(".move-list-body").on("click", ".move-white, .move-black", function () {
+    const idx = parseInt($(this).attr("data-move-index"), 10);
+    if (!isNaN(idx)) jumpToMove(idx);
+  });
 });
 
 // --- CORE GAME CONTROLS ---
@@ -180,6 +198,34 @@ function prevMove() {
     );
     analyzePosition(game.fen());
   }
+}
+
+function jumpToMove(targetIndex) {
+  // Clear any pending engine state
+  clearSuggestedMoveHighlight();
+  pendingSelectedPlayerMove = false;
+  waitingForEvalAfterSelectedMove = false;
+  storedSelectedPlayerBestMove = null;
+
+  // Replay from start up to and including targetIndex
+  game.reset();
+  for (let i = 0; i <= targetIndex; i++) {
+    game.move(moves[i].san);
+  }
+
+  board.position(game.fen(), false);
+  currentMoveIndex = targetIndex + 1;
+
+  // Highlight the move in the list
+  highlightActiveMove(targetIndex);
+
+  // Highlight the last played move on the board
+  const lastMove = moves[targetIndex];
+  highlightLastMove(lastMove.from, lastMove.to);
+
+  // Trigger engine analysis
+  updateCoach("Thinking...", "Analyzing this position...", "neutral");
+  analyzePosition(game.fen());
 }
 
 // --- ENGINE TRANSLATION & COACHING ---
