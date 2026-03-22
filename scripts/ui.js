@@ -12,6 +12,24 @@ export function updateCoach(title, text, sentiment) {
   $("#coach-title").css("color", color);
 }
 
+/** Initialize tab switching for Coach / Analysis views. */
+export function initTabs() {
+  $(".tab-btn").on("click", function () {
+    const targetId = $(this).data("target");
+    $(".tab-btn").removeClass("active");
+    $(this).addClass("active");
+    $(".tab-content").removeClass("active").hide();
+    $("#" + targetId).addClass("active").show();
+  });
+}
+
+/** Update the raw Analysis tab with engine stats. */
+export function updateAnalysisView(scoreStr, depth, bestLineUci) {
+  $("#analysis-eval").text(scoreStr || "0.00");
+  $("#analysis-depth").text("Depth " + (depth || 0));
+  $("#analysis-line").text(bestLineUci || "Waiting for engine...");
+}
+
 export function updateEvalBar(score) {
   // Clamp visual score between -5 and +5
   let visualScore = Math.max(-5, Math.min(5, score));
@@ -156,5 +174,60 @@ export function highlightActiveMove(moveIndex) {
   if (target.length) {
     target.addClass("move-active");
     target[0].scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+}
+
+/** Add a classification icon badge to a move in the move list. */
+export function addMoveClassificationIcon(moveIndex, classification) {
+  const target = $(".move-list-body").find(`[data-move-index="${moveIndex}"]`);
+  if (!target.length) return;
+
+  // Remove existing icon to prevent duplicates
+  target.find(".move-icon").remove();
+
+  const iconMap = {
+    blunder:    '<span class="move-icon icon-blunder">✖</span>',
+    mistake:    '<span class="move-icon icon-mistake">⁇</span>',
+    inaccuracy: '<span class="move-icon icon-inaccuracy">⁈</span>',
+    best:       '<span class="move-icon icon-best">⭐</span>',
+    good:       '<span class="move-icon icon-good">👍</span>',
+  };
+
+  const html = iconMap[classification];
+  if (html) target.append(html);
+}
+
+/** Update the clock displays for both players. */
+export function updateClocks(whiteTimeStr, blackTimeStr, analyzeForColor) {
+  const topClock = $(".top-player .clock-display");
+  const bottomClock = $(".bottom-player .clock-display");
+
+  const wTime = whiteTimeStr || "--:--";
+  const bTime = blackTimeStr || "--:--";
+
+  if (analyzeForColor === "black") {
+    bottomClock.text(bTime);
+    topClock.text(wTime);
+  } else {
+    // Default or "white": White at bottom
+    bottomClock.text(wTime);
+    topClock.text(bTime);
+  }
+}
+
+/** Update material advantage badges next to player names. */
+export function updateMaterial(whiteAdvantage, blackAdvantage, analyzeForColor) {
+  const topScore = $(".top-player .material-score");
+  const bottomScore = $(".bottom-player .material-score");
+
+  const wText = whiteAdvantage > 0 ? "+" + whiteAdvantage : "";
+  const bText = blackAdvantage > 0 ? "+" + blackAdvantage : "";
+
+  if (analyzeForColor === "black") {
+    bottomScore.text(bText);
+    topScore.text(wText);
+  } else {
+    bottomScore.text(wText);
+    topScore.text(bText);
   }
 }

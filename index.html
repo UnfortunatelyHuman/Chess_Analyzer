@@ -39,12 +39,18 @@
             <div id="board-container">
                 <div id="board-wrapper">
                     <div class="player-profile top-player">
-                        <span class="player-name">Opponent</span>
+                        <div class="player-info">
+                            <span class="player-name">Opponent</span>
+                            <span class="material-score"></span>
+                        </div>
                         <div class="clock-display">10:00</div>
                     </div>
                     <div id="board"></div>
                     <div class="player-profile bottom-player">
-                        <span class="player-name">You</span>
+                        <div class="player-info">
+                            <span class="player-name">You</span>
+                            <span class="material-score"></span>
+                        </div>
                         <div class="clock-display">10:00</div>
                     </div>
                 </div>
@@ -68,17 +74,35 @@
 
             <div class="coach-panel">
 
-                <div class="coach-bubble">
-                    <div class="coach-avatar">🤖</div>
-                    <div class="coach-content">
-                        <span id="coach-title">I'm ready!</span>
-                        <span id="coach-text">Load a PGN game to start your lesson.</span>
+                <div class="tabs-container">
+                    <button class="tab-btn active" data-target="tab-coach">Coach</button>
+                    <button class="tab-btn" data-target="tab-analysis">Analysis</button>
+                </div>
+
+                <div id="tab-coach" class="tab-content active">
+                    <div class="coach-bubble">
+                        <div class="coach-avatar">🤖</div>
+                        <div class="coach-content">
+                            <span id="coach-title">I'm ready!</span>
+                            <span id="coach-text">Load a PGN game to start your lesson.</span>
+                        </div>
                     </div>
                 </div>
 
+                <div id="tab-analysis" class="tab-content" style="display: none;">
+                    <div class="analysis-header">
+                        <span id="analysis-eval">0.00</span>
+                        <span id="analysis-depth">Depth 0</span>
+                    </div>
+                    <div id="analysis-line" class="analysis-line">Waiting for engine...</div>
+                </div>
+
                 <div class="controls">
-                    <button id="btnPrev" class="secondary">◀ Back</button>
-                    <button id="btnNext" class="primary">Next Move ▶</button>
+                    <button id="btnFirst" class="secondary" title="First move">|◀</button>
+                    <button id="btnPrev" class="secondary" title="Previous move">◀</button>
+                    <button id="btnNext" class="primary" title="Next move">▶</button>
+                    <button id="btnLast" class="secondary" title="Last move">▶|</button>
+                    <button id="btnFlip" class="secondary" title="Flip board">🔃</button>
                 </div>
 
                 <div class="setup-toggle" id="toggle-setup">Paste PGN Game 👇</div>
