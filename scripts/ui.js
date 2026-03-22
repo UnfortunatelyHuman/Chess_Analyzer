@@ -23,6 +23,11 @@ export function updateEvalBar(score) {
   // Format the text label (4-digit style e.g. 10.01, -5.20)
   let label = score > 0 ? "+" + score.toFixed(2) : score.toFixed(2);
   $("#eval-score").text(label);
+
+  // Position the score label to ride just above the fill line
+  // Clamp so it doesn't clip off the top or bottom of the bar
+  let scoreBottom = Math.max(2, Math.min(percent - 5, 90));
+  $("#eval-score").css("bottom", scoreBottom + "%");
 }
 
 export function toggleSetupMenu() {
@@ -87,18 +92,32 @@ export function hidePlayerChoice() {
   $("#player-choice-panel").hide();
 }
 
-/** Show only the selected player's name at the bottom of the board. */
+/** Update both player profile bars (top = opponent, bottom = you). */
 export function updateBoardPlayerLabels(whiteName, blackName, analyzeForColor) {
-  const label = $("#board-selected-player-label");
+  const topName = $(".top-player .player-name");
+  const bottomName = $(".bottom-player .player-name");
+
+  const wLabel = whiteName && whiteName.trim() ? whiteName.trim() : "White";
+  const bLabel = blackName && blackName.trim() ? blackName.trim() : "Black";
+
   if (!analyzeForColor) {
-    label.text("").hide();
+    // Default: White at bottom, Black at top
+    bottomName.text(wLabel);
+    topName.text(bLabel);
+    $(".bottom-player").removeClass("is-analyzing");
+    $(".top-player").removeClass("is-analyzing");
     return;
   }
-  const name =
-    analyzeForColor === "white"
-      ? (whiteName && whiteName.trim() ? whiteName.trim() : "White")
-      : (blackName && blackName.trim() ? blackName.trim() : "Black");
-  label.text(name).addClass("analyzing").show();
+
+  if (analyzeForColor === "white") {
+    bottomName.text(wLabel);
+    topName.text(bLabel);
+  } else {
+    bottomName.text(bLabel);
+    topName.text(wLabel);
+  }
+  $(".bottom-player").addClass("is-analyzing");
+  $(".top-player").removeClass("is-analyzing");
 }
 
 /** Render the move list from the parsed PGN moves array (chess.js verbose history). */
@@ -136,21 +155,6 @@ export function highlightActiveMove(moveIndex) {
   const target = $(`.move-list-body [data-move-index="${moveIndex}"]`);
   if (target.length) {
     target.addClass("move-active");
-
-    // Scroll the move-list-body so the active move stays visible
-    const container = $(".move-list-body")[0];
-    const el = target[0];
-    if (container && el) {
-      const elTop = el.offsetTop;
-      const elHeight = el.offsetHeight;
-      const containerHeight = container.clientHeight;
-      const scrollTop = container.scrollTop;
-
-      if (elTop < scrollTop) {
-        container.scrollTop = elTop;
-      } else if (elTop + elHeight > scrollTop + containerHeight) {
-        container.scrollTop = elTop + elHeight - containerHeight;
-      }
-    }
+    target[0].scrollIntoView({ behavior: "smooth", block: "center" });
   }
 }

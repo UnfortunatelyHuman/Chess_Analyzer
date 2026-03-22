@@ -46,7 +46,7 @@ body {
   display: flex;
   flex-direction: row;
   gap: 0;
-  max-width: 920px;
+  max-width: 960px;
   margin: 0 auto;
   align-items: flex-start;
 }
@@ -56,7 +56,7 @@ body {
   display: flex;
   gap: 0;                         /* flush — no gap */
   flex-shrink: 0;
-  width: 438px;
+  width: 480px;
   box-shadow: var(--shadow-card);
   border-radius: var(--radius-sm);
   overflow: hidden;               /* shared rounding clips children */
@@ -94,21 +94,24 @@ body {
 }
 #eval-score {
   position: absolute;
-  top: 6px;
+  bottom: 44%;
   left: 0;
   right: 0;
   width: 100%;
   text-align: center;
   font-size: 9px;
   font-variant-numeric: tabular-nums;
-  color: #1a1917;
+  color: #fff;
   z-index: 2;
   font-weight: 700;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: clip;
-  padding: 0 2px;
+  padding: 2px 2px;
   letter-spacing: 0.02em;
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: 2px;
+  transition: bottom 0.5s ease;
 }
 
 /* ================================================================
@@ -124,29 +127,47 @@ body {
 #board-wrapper {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   width: 100%;
-  max-width: 406px;
+  max-width: 448px;
 }
 
-.board-player-label {
-  width: 100%;
-  text-align: left;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  padding: 6px 4px;
-  min-height: 26px;
-  background: var(--bg-panel);
+/* ---- Player profile bars ---- */
+.player-profile {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: var(--bg-panel-alt);
+  min-height: 34px;
 }
-.board-player-label.analyzing {
-  color: var(--accent-green);
+.player-profile .player-name {
+  font-size: 13px;
   font-weight: 700;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.player-profile.is-analyzing .player-name {
+  color: var(--accent-green);
+}
+.clock-display {
+  font-family: "Courier New", "SF Mono", monospace;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  background: #1a1917;
+  padding: 3px 10px;
+  border-radius: 4px;
+  letter-spacing: 0.04em;
+  line-height: 1.3;
+  min-width: 54px;
+  text-align: center;
 }
 
 #board {
   width: 100%;
-  max-width: 406px;
 }
 
 /* ---- Piece / Notation z-index ---- */
@@ -264,6 +285,8 @@ body {
   height: 200px;
   overflow-y: auto;
   padding: 0;
+  position: relative;
+  scroll-behavior: smooth;
 }
 
 /* Custom scrollbar for move list */
