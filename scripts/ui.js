@@ -88,7 +88,7 @@ export function clearLastMoveHighlight() {
   $(`#board .${LAST_MOVE_CLASS}`).removeClass(`${LAST_MOVE_CLASS} last-move-from last-move-to`);
 }
 
-/** Show panel to choose which player's moves to analyze. onSelect('white'|'black') when chosen. */
+/** Show panel to choose which player's moves to analyze. onSelect('white'|'black'|'both') when chosen. */
 export function showPlayerChoice(whiteName, blackName, onSelect) {
   const w = whiteName && whiteName.trim() ? `White: ${whiteName.trim()}` : "White";
   const b = blackName && blackName.trim() ? `Black: ${blackName.trim()}` : "Black";
@@ -102,6 +102,10 @@ export function showPlayerChoice(whiteName, blackName, onSelect) {
   $("#btnAnalyzeBlack").off("click").on("click", function () {
     $("#player-choice-panel").hide();
     onSelect("black");
+  });
+  $("#btnAnalyzeBoth").off("click").on("click", function () {
+    $("#player-choice-panel").hide();
+    onSelect("both");
   });
 }
 
@@ -127,15 +131,21 @@ export function updateBoardPlayerLabels(whiteName, blackName, analyzeForColor) {
     return;
   }
 
-  if (analyzeForColor === "white") {
+  if (analyzeForColor === "white" || analyzeForColor === "both") {
     bottomName.text(wLabel);
     topName.text(bLabel);
   } else {
     bottomName.text(bLabel);
     topName.text(wLabel);
   }
-  $(".bottom-player").addClass("is-analyzing");
-  $(".top-player").removeClass("is-analyzing");
+
+  if (analyzeForColor === "both") {
+    $(".bottom-player").addClass("is-analyzing");
+    $(".top-player").addClass("is-analyzing");
+  } else {
+    $(".bottom-player").addClass("is-analyzing");
+    $(".top-player").removeClass("is-analyzing");
+  }
 }
 
 /** Render the move list from the parsed PGN moves array (chess.js verbose history). */
@@ -230,4 +240,71 @@ export function updateMaterial(whiteAdvantage, blackAdvantage, analyzeForColor) 
     bottomScore.text(wText);
     topScore.text(bText);
   }
+}
+
+/** Render captured piece icons inside the player profile bars. */
+export function updateCapturedPieces(capturedByWhite, capturedByBlack, analyzeForColor) {
+  const imgBase = "https://chessboardjs.com/img/chesspieces/wikipedia/";
+
+  function renderPieces(pieces, capturedColor) {
+    // pieces = array of piece types like ['q','r','p']
+    // capturedColor = 'b' if White captured them (black pieces), 'w' if Black captured them
+    return pieces
+      .map((type) => {
+        const code = capturedColor + type.toUpperCase(); // e.g. "bP", "wN"
+        return `<img src="${imgBase}${code}.png" alt="${code}">`;
+      })
+      .join("");
+  }
+
+  // capturedByWhite = black pieces that White captured → show near White's profile
+  // capturedByBlack = white pieces that Black captured → show near Black's profile
+  const whiteCapturedHtml = renderPieces(capturedByWhite, "b");
+  const blackCapturedHtml = renderPieces(capturedByBlack, "w");
+
+  if (analyzeForColor === "black") {
+    $(".bottom-player .captured-pieces").html(whiteCapturedHtml);
+    $(".top-player .captured-pieces").html(blackCapturedHtml);
+  } else {
+    $(".bottom-player .captured-pieces").html(whiteCapturedHtml);
+    $(".top-player .captured-pieces").html(blackCapturedHtml);
+  }
+}
+
+/** Render the post-game scorecard tallying classification counts and accuracy. */
+export function renderScorecard(whiteCounts, blackCounts, whiteAccuracy, blackAccuracy) {
+  const rows = [
+    { key: "best",       label: "BEST MOVE",   icon: "⭐", cls: "icon-best" },
+    { key: "good",       label: "GOOD",         icon: "👍", cls: "icon-good" },
+    { key: "inaccuracy", label: "INACCURACY",   icon: "⁈",  cls: "icon-inaccuracy" },
+    { key: "mistake",    label: "MISTAKE",      icon: "⁇",  cls: "icon-mistake" },
+    { key: "blunder",    label: "BLUNDER",      icon: "✖",  cls: "icon-blunder" },
+  ];
+
+  let html = `
+    <div class="scorecard-header">
+      <div>
+        <div class="acc-val">${whiteAccuracy}%</div>
+        <div class="acc-label">White Accuracy</div>
+      </div>
+      <div>
+        <div class="acc-val">${blackAccuracy}%</div>
+        <div class="acc-label">Black Accuracy</div>
+      </div>
+    </div>
+  `;
+
+  for (const r of rows) {
+    const w = whiteCounts[r.key] || 0;
+    const b = blackCounts[r.key] || 0;
+    html += `
+      <div class="scorecard-row">
+        <div class="sc-val">${w}</div>
+        <div class="sc-label"><span class="move-icon ${r.cls}">${r.icon}</span> ${r.label}</div>
+        <div class="sc-val">${b}</div>
+      </div>
+    `;
+  }
+
+  $("#scorecard-container").html(html);
 }

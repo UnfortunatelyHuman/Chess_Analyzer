@@ -20,6 +20,8 @@ import {
   addMoveClassificationIcon,
   initTabs,
   updateAnalysisView,
+  updateCapturedPieces,
+  renderScorecard,
 } from "./ui.js";
 
 let board = null;
@@ -28,6 +30,9 @@ let moves = [];
 let clockTimes = [];
 let moveClassifications = [];
 let currentMoveIndex = 0;
+let currentEngineDepth = 0;
+let currentEngineScore = "0.00";
+let currentEnginePV = "Waiting for engine...";
 let currentEval = 0.0;
 let prevEval = 0.0;
 /** Which side we analyze: 'white' | 'black'. Set when user chooses after PGN load. */
@@ -41,24 +46,36 @@ let pendingSelectedPlayerMove = false;
 let waitingForEvalAfterSelectedMove = false;
 /** Selected player's best move (from position before their move), used for highlight and for generateAdvice. */
 let storedSelectedPlayerBestMove = null;
+/** Variation (Free Play) state */
+let originalMoves = [];
+let originalClockTimes = [];
+let originalClassifications = [];
+let isVariation = false;
 
 $(document).ready(function () {
   initEngine(handleEngineMessage);
 
   board = Chessboard("board", {
     position: "start",
-    draggable: false,
+    draggable: true,
     pieceTheme:
       "https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png",
     moveSpeed: 500,
     appearSpeed: 500,
+    onDragStart: onDragStart,
+    onDrop: onDrop,
+    onSnapEnd: onSnapEnd,
   });
 
   $(window).resize(board.resize);
-  $("#btnFirst").on("click", function () { jumpToStart(); });
+  $("#btnFirst").on("click", function () {
+    jumpToStart();
+  });
   $("#btnNext").on("click", nextMove);
   $("#btnPrev").on("click", prevMove);
-  $("#btnLast").on("click", function () { if (moves.length > 0) jumpToMove(moves.length - 1); });
+  $("#btnLast").on("click", function () {
+    if (moves.length > 0) jumpToMove(moves.length - 1);
+  });
   $("#btnFlip").on("click", flipBoard);
   $("#btnLoad").on("click", loadGame);
   $("#toggle-setup").on("click", toggleSetupMenu);
@@ -81,7 +98,87 @@ $(document).ready(function () {
     const idx = parseInt($(this).attr("data-move-index"), 10);
     if (!isNaN(idx)) jumpToMove(idx);
   });
+
+  // Exit variation: restore original game
+  $("#btnExitVariation").on("click", function () {
+    // 1. Exit variation mode
+    isVariation = false;
+    $("#variation-banner").hide();
+
+    // 2. Restore the original tracking arrays
+    moves = [...originalMoves];
+    clockTimes = [...originalClockTimes];
+    moveClassifications = [...originalClassifications];
+
+    // 3. FORCE the UI to redraw the original move list!
+    renderMoveList(moves);
+
+    // 4. Re-apply all the saved classification icons (⭐, ✖, etc.)
+    for (let i = 0; i < moveClassifications.length; i++) {
+      if (moveClassifications[i]) {
+        addMoveClassificationIcon(i, moveClassifications[i]);
+      }
+    }
+
+    // 5. Safely reset the board to the start of the main line
+    jumpToStart();
+  });
 });
+
+// --- DRAG & DROP (Free Play) ---
+
+function onDragStart(source, piece, position, orientation) {
+  if (game.game_over()) return false;
+  if (
+    (game.turn() === "w" && piece.search(/^b/) !== -1) ||
+    (game.turn() === "b" && piece.search(/^w/) !== -1)
+  ) {
+    return false;
+  }
+}
+
+function onDrop(source, target) {
+  let move = game.move({ from: source, to: target, promotion: "q" });
+  if (move === null) return "snapback";
+
+  // First branch: save originals and show banner
+  if (!isVariation) {
+    isVariation = true;
+    $("#variation-banner").css("display", "flex");
+    originalClassifications = [...moveClassifications];
+  }
+
+  // Truncate future moves — user is branching
+  moves = moves.slice(0, currentMoveIndex);
+  clockTimes = clockTimes.slice(0, currentMoveIndex);
+  moveClassifications = moveClassifications.slice(0, currentMoveIndex);
+
+  // Add the new move
+  moves.push(move);
+  currentMoveIndex++;
+
+  // Clean up pending engine state
+  clearSuggestedMoveHighlight();
+  pendingSelectedPlayerMove = false;
+  waitingForEvalAfterSelectedMove = false;
+  storedSelectedPlayerBestMove = null;
+
+  // Update the UI
+  highlightLastMove(source, target);
+  renderMoveList(moves);
+  highlightActiveMove(currentMoveIndex - 1);
+  syncMaterial();
+
+  // Trigger engine
+  updateCoach("Thinking...", "Analyzing custom variation...", "neutral");
+  currentEnginePV = "Calculating...";
+  updateAnalysisView(currentEngineScore, currentEngineDepth, currentEnginePV);
+  analyzePosition(game.fen());
+}
+
+function onSnapEnd() {
+  board.position(game.fen(), false);
+}
 
 // --- CORE GAME CONTROLS ---
 
@@ -121,6 +218,13 @@ function loadGame() {
     clockTimes = clkMatches.map((m) => m[1].trim());
     moveClassifications = [];
 
+    // Save originals for variation restore
+    originalMoves = [...moves];
+    originalClockTimes = [...clockTimes];
+    originalClassifications = [];
+    isVariation = false;
+    $("#variation-banner").hide();
+
     const names = parsePgnHeaders(pgn);
     whitePlayerName = names.white;
     blackPlayerName = names.black;
@@ -138,18 +242,39 @@ function loadGame() {
     highlightActiveMove(-1);
     syncClocks(-1);
     syncMaterial();
+    generateScorecard();
     updateBoardPlayerLabels(whitePlayerName, blackPlayerName, null);
     showPlayerChoice(whitePlayerName, blackPlayerName, function (color) {
       analyzeForColor = color;
-      board.orientation(analyzeForColor);
-      updateBoardPlayerLabels(whitePlayerName, blackPlayerName, analyzeForColor);
+      if (analyzeForColor === "both") {
+        board.orientation("white");
+      } else {
+        board.orientation(analyzeForColor);
+      }
+      updateBoardPlayerLabels(
+        whitePlayerName,
+        blackPlayerName,
+        analyzeForColor,
+      );
       syncClocks(-1);
       syncMaterial();
       updateCoach(
         "Ready",
-        analyzeForColor === "white" ? "Analyzing White's moves. Click Next Move to start." : "Analyzing Black's moves. Click Next Move to start.",
+        analyzeForColor === "both"
+          ? "Analyzing both players' moves. Click Next Move to start."
+          : analyzeForColor === "white"
+            ? "Analyzing White's moves. Click Next Move to start."
+            : "Analyzing Black's moves. Click Next Move to start.",
         "neutral",
       );
+      //to trigger the engine immediately:
+      currentEnginePV = "Calculating...";
+      updateAnalysisView(
+        currentEngineScore,
+        currentEngineDepth,
+        currentEnginePV,
+      );
+      analyzePosition(game.fen());
     });
   } else {
     updateCoach(
@@ -169,9 +294,10 @@ function nextMove() {
 
   const move = moves[currentMoveIndex];
   const isSelectedPlayerMove =
-    analyzeForColor &&
-    ((analyzeForColor === "white" && currentMoveIndex % 2 === 0) ||
-      (analyzeForColor === "black" && currentMoveIndex % 2 === 1));
+    analyzeForColor === "both" ||
+    (analyzeForColor &&
+      ((analyzeForColor === "white" && currentMoveIndex % 2 === 0) ||
+        (analyzeForColor === "black" && currentMoveIndex % 2 === 1)));
 
   if (isSelectedPlayerMove) {
     const savedFen = game.fen();
@@ -184,6 +310,8 @@ function nextMove() {
     syncMaterial();
     pendingSelectedPlayerMove = true;
     updateCoach("Thinking...", "Finding the best move for you...", "neutral");
+    currentEnginePV = "Calculating...";
+    updateAnalysisView(currentEngineScore, currentEngineDepth, currentEnginePV);
     analyzePosition(savedFen);
     return;
   }
@@ -196,6 +324,8 @@ function nextMove() {
   syncClocks(currentMoveIndex - 1);
   syncMaterial();
   updateCoach("Thinking...", "Calculating the best moves...", "neutral");
+  currentEnginePV = "Calculating...";
+  updateAnalysisView(currentEngineScore, currentEngineDepth, currentEnginePV);
   analyzePosition(game.fen());
 }
 
@@ -222,6 +352,8 @@ function prevMove() {
       "Let's take a look at the previous position.",
       "neutral",
     );
+    currentEnginePV = "Calculating...";
+    updateAnalysisView(currentEngineScore, currentEngineDepth, currentEnginePV);
     analyzePosition(game.fen());
   }
 }
@@ -270,27 +402,29 @@ function jumpToStart() {
   highlightActiveMove(-1);
   syncClocks(-1);
   syncMaterial();
-  updateCoach("Start", "Back to the beginning. Click Next Move to step through.", "neutral");
+  updateCoach(
+    "Start",
+    "Back to the beginning. Click Next Move to step through.",
+    "neutral",
+  );
   analyzePosition(game.fen());
 }
 
 /** Flip the board and swap the UI orientation. */
 function flipBoard() {
   board.flip();
-  // Toggle analyzeForColor orientation
-  if (analyzeForColor === "white") {
-    analyzeForColor = "black";
-  } else if (analyzeForColor === "black") {
-    analyzeForColor = "white";
-  }
-  updateBoardPlayerLabels(whitePlayerName, blackPlayerName, analyzeForColor);
-  syncClocks(currentMoveIndex - 1);
-  syncMaterial();
+  $("#board-wrapper").toggleClass("flipped-layout");
 }
 
 /** Calculate material totals from the current board position. */
 function calculateMaterial() {
   const pieceValues = { p: 1, n: 3, b: 3, r: 5, q: 9 };
+  const pieceOrder = ['q', 'r', 'b', 'n', 'p'];
+  const startingPieces = { p: 8, n: 2, b: 2, r: 2, q: 1 };
+
+  // Count current pieces on the board
+  let whiteCounts = { p: 0, n: 0, b: 0, r: 0, q: 0 };
+  let blackCounts = { p: 0, n: 0, b: 0, r: 0, q: 0 };
   let whiteTotal = 0;
   let blackTotal = 0;
 
@@ -300,25 +434,41 @@ function calculateMaterial() {
       const sq = boardArr[row][col];
       if (sq && pieceValues[sq.type]) {
         if (sq.color === "w") {
+          whiteCounts[sq.type]++;
           whiteTotal += pieceValues[sq.type];
         } else {
+          blackCounts[sq.type]++;
           blackTotal += pieceValues[sq.type];
         }
       }
     }
   }
 
+  // Figure out which pieces are missing (captured)
+  let capturedByWhite = []; // Black pieces White has taken
+  let capturedByBlack = []; // White pieces Black has taken
+
+  for (const type of pieceOrder) {
+    const missingBlack = startingPieces[type] - blackCounts[type];
+    for (let i = 0; i < missingBlack; i++) capturedByWhite.push(type);
+    const missingWhite = startingPieces[type] - whiteCounts[type];
+    for (let i = 0; i < missingWhite; i++) capturedByBlack.push(type);
+  }
+
   const diff = whiteTotal - blackTotal;
   return {
     whiteAdvantage: diff > 0 ? diff : 0,
     blackAdvantage: diff < 0 ? -diff : 0,
+    capturedByWhite,
+    capturedByBlack,
   };
 }
 
-/** Sync the material advantage badges. */
+/** Sync the material advantage badges and captured pieces. */
 function syncMaterial() {
   const mat = calculateMaterial();
   updateMaterial(mat.whiteAdvantage, mat.blackAdvantage, analyzeForColor);
+  updateCapturedPieces(mat.capturedByWhite, mat.capturedByBlack, analyzeForColor);
 }
 
 /** Look through clockTimes to find the most recent White & Black times up to index. */
@@ -350,69 +500,111 @@ function syncClocks(index) {
 
 // --- ENGINE TRANSLATION & COACHING ---
 
-function handleEngineMessage(msg) {
-  // Parse "info depth" lines for the Analysis tab
-  if (msg.startsWith("info depth")) {
-    const depthMatch = msg.match(/depth (\d+)/);
-    const pvMatch = msg.match(/pv (.*)/);
-    const depth = depthMatch ? parseInt(depthMatch[1]) : 0;
-    const pv = pvMatch ? pvMatch[1].trim() : "";
+/** Convert raw UCI PV string (e.g. "e2e4 e7e5") into numbered SAN (e.g. "1. e4 e5"). */
+function formatEngineLine(pvString, startFen) {
+  if (!pvString) return "";
+  let tempGame = new Chess(startFen);
+  const rawMoves = pvString.trim().split(/\s+/);
+  let formattedLine = [];
 
-    // Extract score (cp or mate) for Analysis view
-    let formattedScore = "0.00";
+  for (let i = 0; i < rawMoves.length; i++) {
+    const raw = rawMoves[i];
+    if (raw.length < 4) continue;
+    const from = raw.substring(0, 2);
+    const to = raw.substring(2, 4);
+    const promotion = raw.length >= 5 ? raw[4] : undefined;
+
+    // Much safer move number calculation
+    const moveNum = Math.floor(tempGame.history().length / 2) + 1;
+    const isWhite = tempGame.turn() === "w";
+
+    // Safely build the move object so chess.js doesn't crash
+    let moveParams = { from: from, to: to };
+    if (promotion) moveParams.promotion = promotion;
+
+    const moveObj = tempGame.move(moveParams);
+    if (!moveObj) {
+      // If the parser ever fails, just push the raw text and stop so it doesn't break
+      formattedLine.push(raw);
+      break;
+    }
+
+    if (isWhite) {
+      formattedLine.push(moveNum + ". " + moveObj.san);
+    } else if (i === 0) {
+      formattedLine.push(moveNum + "... " + moveObj.san);
+    } else {
+      formattedLine.push(moveObj.san);
+    }
+  }
+
+  return formattedLine.join(" ");
+}
+
+function handleEngineMessage(msg) {
+  // Catch any line that contains engine info
+  if (msg.startsWith("info ")) {
+    let uiNeedsUpdate = false;
+
+    // 1. Check for Depth updates
+    const depthMatch = msg.match(/depth (\d+)/);
+    if (depthMatch) {
+      currentEngineDepth = parseInt(depthMatch[1]);
+      uiNeedsUpdate = true;
+    }
+
+    // 2. Check for Score updates
     const cpMatch = msg.match(/score cp (-?\d+)/);
     const mateMatch = msg.match(/score mate (-?\d+)/);
 
     if (cpMatch) {
       let cp = parseInt(cpMatch[1]);
       let evalInPawns = cp / 100;
-      if (game.turn() === "b") evalInPawns = -evalInPawns;
-      formattedScore = (evalInPawns > 0 ? "+" : "") + evalInPawns.toFixed(2);
+      if (game.turn() === "b") evalInPawns = -evalInPawns; // Absolute perspective
 
-      // Also update eval bar and currentEval (only if not in pending state)
+      currentEngineScore =
+        (evalInPawns > 0 ? "+" : "") + evalInPawns.toFixed(2);
+
+      // Update the visual bar
       if (!pendingSelectedPlayerMove) {
         currentEval = evalInPawns;
         updateEvalBar(currentEval);
       }
+      uiNeedsUpdate = true;
     } else if (mateMatch) {
       let mateIn = parseInt(mateMatch[1]);
       let absoluteMate = game.turn() === "b" ? -mateIn : mateIn;
-      formattedScore = (absoluteMate > 0 ? "+" : "") + "M" + Math.abs(mateIn);
 
+      currentEngineScore = (absoluteMate > 0 ? "+M" : "-M") + Math.abs(mateIn);
+
+      // Update the visual bar for checkmate
       if (!pendingSelectedPlayerMove) {
         updateEvalBar(absoluteMate > 0 ? 10 : -10);
       }
+      uiNeedsUpdate = true;
     }
 
-    updateAnalysisView(formattedScore, depth, pv);
-    return;
-  }
-
-  // Handle score cp (from non-"info depth" lines, legacy fallback)
-  if (msg.includes("score cp")) {
-    if (pendingSelectedPlayerMove) return;
-    let match = msg.match(/score cp (-?\d+)/);
-    if (match) {
-      let cp = parseInt(match[1]);
-      let evalInPawns = cp / 100;
-      if (game.turn() === "b") evalInPawns = -evalInPawns;
-      currentEval = evalInPawns;
-      updateEvalBar(currentEval);
+    // 3. Check for PV (Best Line) updates
+    const pvMatch = msg.match(/ pv (.*)/);
+    if (pvMatch) {
+      const rawPv = pvMatch[1].trim();
+      const readableLine = formatEngineLine(rawPv, game.fen());
+      currentEnginePV = readableLine || rawPv;
+      uiNeedsUpdate = true;
     }
-  } else if (msg.includes("score mate")) {
-    if (pendingSelectedPlayerMove) return;
-    let match = msg.match(/score mate (-?\d+)/);
-    if (match) {
-      let mateIn = parseInt(match[1]);
-      let absoluteMate = game.turn() === "b" ? -mateIn : mateIn;
-      updateEvalBar(absoluteMate > 0 ? 10 : -10);
-      updateCoach(
-        "Checkmate!",
-        `Forced mate in ${Math.abs(mateIn)} moves detected!`,
-        mateIn > 0 ? "good" : "bad",
+
+    // 4. Update the Analysis Tab if anything changed
+    if (uiNeedsUpdate) {
+      updateAnalysisView(
+        currentEngineScore,
+        currentEngineDepth,
+        currentEnginePV,
       );
     }
-  } else if (msg.includes("bestmove")) {
+  }
+
+  // Handle the final "bestmove" trigger
+  if (msg.includes("bestmove")) {
     let bestEngineMove = msg.split(" ")[1];
 
     if (pendingSelectedPlayerMove) {
@@ -422,18 +614,30 @@ function handleEngineMessage(msg) {
       pendingSelectedPlayerMove = false;
       waitingForEvalAfterSelectedMove = true;
       updateCoach("Thinking...", "Calculating evaluation...", "neutral");
+
+      currentEnginePV = "Calculating evaluation...";
+      updateAnalysisView(
+        currentEngineScore,
+        currentEngineDepth,
+        currentEnginePV,
+      );
       analyzePosition(game.fen());
       return;
     }
 
     if (waitingForEvalAfterSelectedMove) {
-      generateAdvice(currentEval, prevEval, storedSelectedPlayerBestMove);
+      if (currentMoveIndex > 0) {
+        generateAdvice(currentEval, prevEval, storedSelectedPlayerBestMove);
+      }
       storedSelectedPlayerBestMove = null;
       waitingForEvalAfterSelectedMove = false;
     } else {
-      generateAdvice(currentEval, prevEval, bestEngineMove);
+      if (currentMoveIndex > 0) {
+        generateAdvice(currentEval, prevEval, bestEngineMove);
+      }
     }
     prevEval = currentEval;
+    generateScorecard();
   }
 }
 
@@ -441,9 +645,10 @@ function generateAdvice(current, previous, bestEngineMove) {
   const moveIndex = currentMoveIndex - 1;
   const moveWasByWhite = moveIndex % 2 === 0;
   const isSelectedPlayer =
-    analyzeForColor &&
-    ((analyzeForColor === "white" && moveWasByWhite) ||
-      (analyzeForColor === "black" && !moveWasByWhite));
+    analyzeForColor === "both" ||
+    (analyzeForColor &&
+      ((analyzeForColor === "white" && moveWasByWhite) ||
+        (analyzeForColor === "black" && !moveWasByWhite)));
 
   let isWhiteMove = game.turn() === "b";
   let playerColor = isWhiteMove ? "White" : "Black";
@@ -457,7 +662,8 @@ function generateAdvice(current, previous, bestEngineMove) {
   if (!isSelectedPlayer) {
     if (!analyzeForColor) {
       title = "Choose player";
-      text = "Choose which player's moves to analyze (White or Black above), then click Next Move.";
+      text =
+        "Choose which player's moves to analyze (White or Black above), then click Next Move.";
     } else {
       title = "Opponent's move";
       text = `Evaluation is ${current.toFixed(1)}. Click Next to see ${analyzeForColor === "white" ? "White" : "Black"}'s next move.`;
@@ -509,4 +715,41 @@ function generateAdvice(current, previous, bestEngineMove) {
   }
 
   updateCoach(title, text, sentiment);
+}
+
+/** Tally move classifications and render the scorecard. */
+function generateScorecard() {
+  const accScores = { best: 100, good: 85, inaccuracy: 50, mistake: 20, blunder: 0 };
+  let whiteCounts = {};
+  let blackCounts = {};
+  let whiteScoreSum = 0;
+  let whiteScoreCount = 0;
+  let blackScoreSum = 0;
+  let blackScoreCount = 0;
+
+  for (let i = 0; i < moveClassifications.length; i++) {
+    const cls = moveClassifications[i];
+    if (!cls) continue;
+
+    if (i % 2 === 0) {
+      // White's move
+      whiteCounts[cls] = (whiteCounts[cls] || 0) + 1;
+      if (accScores[cls] !== undefined) {
+        whiteScoreSum += accScores[cls];
+        whiteScoreCount++;
+      }
+    } else {
+      // Black's move
+      blackCounts[cls] = (blackCounts[cls] || 0) + 1;
+      if (accScores[cls] !== undefined) {
+        blackScoreSum += accScores[cls];
+        blackScoreCount++;
+      }
+    }
+  }
+
+  const whiteAcc = whiteScoreCount > 0 ? Math.round(whiteScoreSum / whiteScoreCount) : "--";
+  const blackAcc = blackScoreCount > 0 ? Math.round(blackScoreSum / blackScoreCount) : "--";
+
+  renderScorecard(whiteCounts, blackCounts, whiteAcc, blackAcc);
 }

@@ -7,11 +7,11 @@
 :root {
   --bg-page:       #302e2b;
   --bg-panel:      #262421;
-  --bg-panel-alt:  #1e1d1b;
+  --bg-panel-alt:  #2c2b29;
   --bg-surface:    #3a3835;
-  --border-color:  #3a3835;
-  --text-primary:  #e8e6e3;
-  --text-secondary:#a8a6a2;
+  --border-color:  #403d39;
+  --text-primary:  #fff;
+  --text-secondary:#c3c3c2;
   --text-muted:    #7b7976;
   --accent-green:  #81b64c;
   --accent-gold:   #e8a93e;
@@ -130,29 +130,53 @@ body {
   align-items: stretch;
   width: 100%;
 }
+#board-wrapper.flipped-layout {
+  flex-direction: column-reverse !important;
+}
 
 /* ---- Player profile bars ---- */
 .player-profile {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  padding: 6px 10px;
-  background: var(--bg-panel-alt);
-  min-height: 34px;
-}
-.player-profile .player-name {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text-secondary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  align-items: center;
+  padding: 8px 0;
+  min-height: 48px;
+  background: transparent;
 }
 .player-info {
   display: flex;
+  gap: 12px;
   align-items: center;
-  gap: 6px;
   min-width: 0;
+}
+.player-avatar {
+  width: 32px;
+  height: 32px;
+  background-color: #5c5a57;
+  background-image: url('https://www.chess.com/bundles/web/images/user-image.svg');
+  background-size: cover;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  flex-shrink: 0;
+}
+.player-details {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+.player-name-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.player-profile .player-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .material-score {
   font-size: 12px;
@@ -165,16 +189,90 @@ body {
 }
 .clock-display {
   font-family: "Courier New", "SF Mono", monospace;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
   color: #fff;
-  background: #1a1917;
-  padding: 3px 10px;
+  background: #262522;
+  padding: 6px 12px;
+  border: 1px solid var(--border-color);
   border-radius: 4px;
   letter-spacing: 0.04em;
   line-height: 1.3;
-  min-width: 54px;
+}
+
+/* ---- Captured Pieces (overlapping images) ---- */
+.captured-pieces {
+  display: flex;
+  align-items: center;
+  margin-top: 2px;
+}
+.captured-pieces img {
+  width: 18px;
+  height: 18px;
+  margin-left: -6px;
+  filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.5));
+}
+.captured-pieces img:first-child {
+  margin-left: 0;
+}
+
+/* ---- Game Review Scorecard ---- */
+#scorecard-container {
+  font-size: 13px;
+}
+.scorecard-header {
+  display: flex;
+  justify-content: space-around;
+  padding: 20px 0;
+  background: var(--bg-panel-alt);
+  border-radius: var(--radius-md);
+  margin-bottom: 15px;
   text-align: center;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+}
+.acc-val {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.acc-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 4px;
+}
+.scorecard-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 13px;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+.scorecard-row:hover {
+  background: var(--bg-surface);
+}
+.scorecard-row:last-child {
+  border-bottom: none;
+}
+.sc-val {
+  width: 30px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  font-weight: 700;
+}
+.sc-label {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 12px;
 }
 
 #board {
@@ -239,6 +337,7 @@ body {
   display: flex;
   gap: 8px;
   justify-content: center;
+  flex-wrap: wrap;
 }
 .player-choice-btn {
   flex: 1;
@@ -271,25 +370,24 @@ body {
   background: #5c4033;
   color: #d9c4a5;
 }
+#btnAnalyzeBoth {
+  background: #4a4845;
+  color: #fff;
+}
 
 /* ================================================================
    MOVE LIST
    ================================================================ */
 #move-list-container {
   background: var(--bg-panel);
-  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
   overflow: hidden;
-  box-shadow: var(--shadow-card);
+  margin-bottom: 15px;
 }
 
 .move-list-header {
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-muted);
-  padding: 10px 14px 8px;
-  border-bottom: 1px solid var(--border-color);
+  display: none;
 }
 
 .move-list-body {
@@ -314,12 +412,13 @@ body {
 
 .move-row {
   display: grid;
-  grid-template-columns: 36px 1fr 1fr;
+  grid-template-columns: 45px 1fr 1fr;
   align-items: center;
   padding: 0;
-  font-size: 13px;
-  font-weight: 500;
-  transition: background 0.15s;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
 }
 .move-row:nth-child(even) {
   background: var(--bg-panel-alt);
@@ -329,29 +428,34 @@ body {
 }
 
 .move-number {
-  color: var(--text-muted);
+  color: #8b8987;
   font-size: 12px;
   font-variant-numeric: tabular-nums;
-  padding: 7px 0 7px 12px;
+  background: var(--bg-panel-alt);
+  width: 45px;
+  text-align: center;
+  padding: 8px 0;
   font-weight: 600;
+  border-right: 1px solid rgba(255,255,255,0.05);
 }
 .move-white,
 .move-black {
   color: var(--text-primary);
-  padding: 7px 10px;
+  padding: 8px 12px;
   cursor: pointer;
-  border-radius: 2px;
-  transition: background 0.15s, color 0.15s;
+  border-radius: 0;
+  transition: none;
 }
 .move-white:hover,
 .move-black:hover {
-  background: rgba(129, 182, 76, 0.15);
-  color: var(--accent-green);
+  background: rgba(255,255,255,0.05);
+  color: var(--text-primary);
 }
 .move-active {
-  background: rgba(129, 182, 76, 0.4) !important;
+  background: #484642 !important;
   color: #fff !important;
-  border-radius: 2px;
+  border-bottom: 2px solid var(--accent-green) !important;
+  border-radius: 0;
 }
 
 /* ---- Move classification icons ---- */

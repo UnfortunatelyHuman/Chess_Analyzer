@@ -40,16 +40,28 @@
                 <div id="board-wrapper">
                     <div class="player-profile top-player">
                         <div class="player-info">
-                            <span class="player-name">Opponent</span>
-                            <span class="material-score"></span>
+                            <div class="player-avatar"></div>
+                            <div class="player-details">
+                                <div class="player-name-row">
+                                    <span class="player-name">Opponent</span>
+                                    <span class="material-score"></span>
+                                </div>
+                                <div class="captured-pieces"></div>
+                            </div>
                         </div>
                         <div class="clock-display">10:00</div>
                     </div>
                     <div id="board"></div>
                     <div class="player-profile bottom-player">
                         <div class="player-info">
-                            <span class="player-name">You</span>
-                            <span class="material-score"></span>
+                            <div class="player-avatar"></div>
+                            <div class="player-details">
+                                <div class="player-name-row">
+                                    <span class="player-name">You</span>
+                                    <span class="material-score"></span>
+                                </div>
+                                <div class="captured-pieces"></div>
+                            </div>
                         </div>
                         <div class="clock-display">10:00</div>
                     </div>
@@ -64,6 +76,7 @@
                 <div class="player-choice-buttons">
                     <button type="button" id="btnAnalyzeWhite" class="player-choice-btn">White</button>
                     <button type="button" id="btnAnalyzeBlack" class="player-choice-btn">Black</button>
+                    <button type="button" id="btnAnalyzeBoth" class="player-choice-btn">Both</button>
                 </div>
             </div>
 
@@ -77,6 +90,12 @@
                 <div class="tabs-container">
                     <button class="tab-btn active" data-target="tab-coach">Coach</button>
                     <button class="tab-btn" data-target="tab-analysis">Analysis</button>
+                    <button class="tab-btn" data-target="tab-review">Review</button>
+                </div>
+
+                <div id="variation-banner" style="display: none; background: #5b8bb4; color: #fff; padding: 8px 16px; font-size: 12px; font-weight: bold; justify-content: space-between; align-items: center;">
+                    <span>🔀 Exploring Variation</span>
+                    <button id="btnExitVariation" style="background: rgba(0,0,0,0.3); color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600;">Return to Game</button>
                 </div>
 
                 <div id="tab-coach" class="tab-content active">
@@ -95,6 +114,10 @@
                         <span id="analysis-depth">Depth 0</span>
                     </div>
                     <div id="analysis-line" class="analysis-line">Waiting for engine...</div>
+                </div>
+
+                <div id="tab-review" class="tab-content" style="display: none; padding: 15px;">
+                    <div id="scorecard-container"></div>
                 </div>
 
                 <div class="controls">
