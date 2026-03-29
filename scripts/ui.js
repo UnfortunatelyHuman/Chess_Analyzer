@@ -1,5 +1,23 @@
 // ui.js - Handles all DOM manipulation and CSS changes
 
+// --- Audio Manager ---
+const sounds = {
+  move: new Audio('https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/move-self.mp3'),
+  capture: new Audio('https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/capture.mp3'),
+  blunder: new Audio('https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/notify.mp3'),
+};
+
+/** Play an audio cue and trigger mobile haptics. type: 'move' | 'capture' | 'blunder' */
+export function playFeedback(type) {
+  if (sounds[type]) {
+    sounds[type].currentTime = 0;
+    sounds[type].play().catch(() => {});
+  }
+  if (navigator.vibrate) {
+    navigator.vibrate(type === 'capture' || type === 'blunder' ? [20] : [10]);
+  }
+}
+
 export function updateCoach(title, text, sentiment) {
   $("#coach-title").html(title);
   $("#coach-text").html(text);

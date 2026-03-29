@@ -482,8 +482,8 @@ body {
 .coach-panel {
   width: 100%;
   background: var(--bg-panel);
-  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
-  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
 }
 
@@ -494,26 +494,28 @@ body {
   border-bottom: 1px solid var(--border-color);
 }
 .tab-btn {
-  flex: 0 1 auto;
+  flex: 1;
+  text-align: center;
   background: transparent;
-  color: var(--text-muted);
-  padding: 10px 18px;
+  color: #8b8987;
+  padding: 12px 0;
   border: none;
-  border-bottom: 2px solid transparent;
+  border-bottom: 3px solid transparent;
   border-radius: 0;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
-  transition: color 0.15s, border-color 0.15s;
+  transition: color 0.2s;
 }
 .tab-btn:hover {
-  color: var(--text-primary);
+  color: #fff;
   background: transparent;
   transform: none;
 }
 .tab-btn.active {
   color: var(--text-primary);
   border-bottom-color: var(--accent-green);
+  background: var(--bg-panel);
 }
 .tab-content {
   display: none;
@@ -527,13 +529,14 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
+  background: rgba(0,0,0,0.15);
+  padding: 10px 16px;
   border-bottom: 1px solid var(--border-color);
 }
 #analysis-eval {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
-  color: var(--text-primary);
+  color: #fff;
   font-variant-numeric: tabular-nums;
 }
 #analysis-depth {
@@ -542,10 +545,10 @@ body {
   font-weight: 600;
 }
 .analysis-line {
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 12px;
+  font-family: Monaco, Consolas, monospace;
+  font-size: 13px;
   color: var(--text-secondary);
-  padding: 12px 16px;
+  padding: 16px;
   line-height: 1.6;
   overflow-wrap: break-word;
   min-height: 40px;
@@ -553,14 +556,14 @@ body {
 
 .coach-bubble {
   background: transparent;
-  border-left: 4px solid var(--accent-gold);
-  padding: 14px 16px;
+  border-left: none;
+  padding: 16px;
   border-radius: 0;
   display: flex;
-  gap: 12px;
+  gap: 14px;
   align-items: flex-start;
   box-shadow: none;
-  transition: border-color 0.3s;
+  transition: none;
   border-bottom: 1px solid var(--border-color);
 }
 .coach-avatar {
@@ -575,18 +578,18 @@ body {
   min-width: 0;
 }
 #coach-title {
-  font-weight: 700;
-  color: var(--accent-gold);
-  font-size: 12px;
-  margin-bottom: 0;
+  font-size: 14px;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+  display: block;
   transition: color 0.3s;
 }
 #coach-text {
   font-size: 14px;
   line-height: 1.5;
-  color: var(--text-primary);
+  color: var(--text-secondary);
   font-weight: 400;
 }
 
@@ -595,41 +598,50 @@ body {
    ================================================================ */
 .controls {
   display: flex;
-  gap: 4px;
-  padding: 8px 12px;
+  gap: 8px;
+  padding: 12px 16px;
   background: var(--bg-panel);
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
 }
 button {
   flex: 1;
-  padding: 10px 4px;
+  padding: 12px 0;
   border: none;
-  border-radius: var(--radius-sm);
-  font-size: 14px;
-  font-weight: 600;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 700;
   cursor: pointer;
-  color: var(--text-primary);
-  font-family: inherit;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   transition: background 0.15s, transform 0.1s;
+  color: #fff;
+  font-family: inherit;
 }
 .primary {
   background: var(--accent-green);
-  color: #fff;
+  box-shadow: 0 3px 0 rgba(0,0,0,0.2);
 }
 .primary:hover {
-  background: #6fa341;
+  background: #8bc253;
+}
+.primary:active {
+  box-shadow: none;
+  transform: translateY(3px);
 }
 .secondary {
-  background: var(--bg-surface);
-  color: var(--text-primary);
+  background: #363431;
+  color: var(--text-secondary);
+  box-shadow: 0 3px 0 rgba(0,0,0,0.2);
 }
 .secondary:hover {
-  background: #4a4845;
+  background: #403d3a;
+  color: #fff;
 }
-button:hover {
-  opacity: 1;
-}
-button:active {
-  transform: scale(0.98);
+.secondary:active {
+  box-shadow: none;
+  transform: translateY(3px);
 }
 
 /* ================================================================
@@ -640,10 +652,12 @@ button:active {
   padding: 10px;
   color: var(--text-muted);
   cursor: pointer;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   transition: color 0.2s;
-  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  background: var(--bg-panel-alt);
 }
 .setup-toggle:hover {
   color: var(--text-primary);

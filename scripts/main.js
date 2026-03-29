@@ -22,6 +22,7 @@ import {
   updateAnalysisView,
   updateCapturedPieces,
   renderScorecard,
+  playFeedback,
 } from "./ui.js";
 
 let board = null;
@@ -138,8 +139,10 @@ function onDragStart(source, piece, position, orientation) {
 }
 
 function onDrop(source, target) {
-  let move = game.move({ from: source, to: target, promotion: "q" });
-  if (move === null) return "snapback";
+  let moveObj = game.move({ from: source, to: target, promotion: "q" });
+  if (moveObj === null) return "snapback";
+  if (moveObj.captured) playFeedback('capture');
+  else playFeedback('move');
 
   // First branch: save originals and show banner
   if (!isVariation) {
@@ -154,7 +157,7 @@ function onDrop(source, target) {
   moveClassifications = moveClassifications.slice(0, currentMoveIndex);
 
   // Add the new move
-  moves.push(move);
+  moves.push(moveObj);
   currentMoveIndex++;
 
   // Clean up pending engine state
@@ -301,7 +304,9 @@ function nextMove() {
 
   if (isSelectedPlayerMove) {
     const savedFen = game.fen();
-    game.move(move.san);
+    const moveObj = game.move(move.san);
+    if (moveObj && moveObj.captured) playFeedback('capture');
+    else playFeedback('move');
     board.position(game.fen(), true);
     currentMoveIndex++;
     highlightLastMove(move.from, move.to);
@@ -316,7 +321,9 @@ function nextMove() {
     return;
   }
 
-  game.move(move.san);
+  const moveObj = game.move(move.san);
+  if (moveObj && moveObj.captured) playFeedback('capture');
+  else playFeedback('move');
   board.position(game.fen(), true);
   currentMoveIndex++;
   highlightLastMove(move.from, move.to);
@@ -336,6 +343,7 @@ function prevMove() {
   storedSelectedPlayerBestMove = null;
   if (currentMoveIndex > 0) {
     game.undo();
+    playFeedback('move');
     board.position(game.fen(), true);
     currentMoveIndex--;
     highlightActiveMove(currentMoveIndex - 1);
@@ -384,6 +392,8 @@ function jumpToMove(targetIndex) {
   // Sync clocks and trigger engine analysis
   syncClocks(targetIndex);
   syncMaterial();
+  if (lastMove && lastMove.captured) playFeedback('capture');
+  else playFeedback('move');
   updateCoach("Thinking...", "Analyzing this position...", "neutral");
   analyzePosition(game.fen());
 }
@@ -712,6 +722,7 @@ function generateAdvice(current, previous, bestEngineMove) {
   if (classification) {
     moveClassifications[moveIndex] = classification;
     addMoveClassificationIcon(moveIndex, classification);
+    if (classification === 'blunder') playFeedback('blunder');
   }
 
   updateCoach(title, text, sentiment);
