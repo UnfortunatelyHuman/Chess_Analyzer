@@ -52,6 +52,9 @@ let originalMoves = [];
 let originalClockTimes = [];
 let originalClassifications = [];
 let isVariation = false;
+/** Touch swipe tracking */
+let touchStartX = 0;
+let touchEndX = 0;
 
 $(document).ready(function () {
   initEngine(handleEngineMessage);
@@ -123,6 +126,25 @@ $(document).ready(function () {
 
     // 5. Safely reset the board to the start of the main line
     jumpToStart();
+  });
+});
+
+// --- TOUCH SWIPE GESTURES ---
+
+function handleSwipe() {
+  const swipeThreshold = 50;
+  const deltaX = touchEndX - touchStartX;
+  if (deltaX > swipeThreshold) nextMove();
+  else if (deltaX < -swipeThreshold) prevMove();
+}
+
+$(function () {
+  $("#board").on("touchstart", function (e) {
+    touchStartX = e.originalEvent.changedTouches[0].screenX;
+  });
+  $("#board").on("touchend", function (e) {
+    touchEndX = e.originalEvent.changedTouches[0].screenX;
+    handleSwipe();
   });
 });
 
