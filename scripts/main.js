@@ -24,6 +24,7 @@ import {
   renderScorecard,
   playFeedback,
 } from "./ui.js";
+import { getOpeningName } from "./eco.js";
 
 let board = null;
 let game = new Chess();
@@ -543,6 +544,17 @@ function syncMaterial() {
   const mat = calculateMaterial();
   updateMaterial(mat.whiteAdvantage, mat.blackAdvantage, analyzeForColor);
   updateCapturedPieces(mat.capturedByWhite, mat.capturedByBlack, analyzeForColor);
+  syncOpeningName();
+}
+
+/** Update the opening name display based on the current position. */
+let lastKnownOpening = "Starting Position";
+function syncOpeningName() {
+  const name = getOpeningName(game.fen());
+  if (name) {
+    lastKnownOpening = name;
+  }
+  $("#opening-name").text(lastKnownOpening);
 }
 
 /** Look through clockTimes to find the most recent White & Black times up to index. */

@@ -465,67 +465,107 @@ body {
    ================================================================ */
 .player-choice-panel {
   width: 100%;
-  padding: 14px 16px;
-  background: var(--bg-panel);
-  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  padding: 12px 16px;
+  background: var(--bg-panel-alt);
   border-bottom: 1px solid var(--border-color);
 }
 .player-choice-title {
   margin: 0 0 10px 0;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
   color: var(--text-secondary);
   text-align: center;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
 }
 .player-choice-buttons {
   display: flex;
-  gap: 8px;
-  justify-content: center;
-  flex-wrap: wrap;
+  background: var(--bg-panel);
+  border-radius: var(--radius-md);
+  padding: 4px;
+  border: 1px solid var(--border-color);
+  gap: 4px;
 }
 .player-choice-btn {
   flex: 1;
-  min-width: 0;
-  max-width: 180px;
-  padding: 10px 10px;
+  padding: 8px 0;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
   border-radius: var(--radius-sm);
-  border: 2px solid transparent;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
   cursor: pointer;
-  transition:
-    border-color 0.2s,
-    transform 0.1s;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  transition: all 0.2s ease;
   font-family: inherit;
 }
 .player-choice-btn:hover {
-  border-color: var(--accent-green);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+}
+#btnAnalyzeWhite:hover {
+  color: #f0d9b5;
+}
+#btnAnalyzeBlack:hover {
+  color: #e3c19f;
+}
+#btnAnalyzeBoth:hover {
+  color: var(--accent-green);
+}
+
+/* ---- Variation Banner ---- */
+.variation-banner {
+  background: rgba(232, 169, 62, 0.12);
+  color: var(--accent-gold);
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(232, 169, 62, 0.2);
+}
+.btn-exit-variation {
+  background: var(--accent-gold);
+  color: #161512;
+  border: none;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+  transition:
+    background 0.2s ease,
+    transform 0.1s;
+}
+.btn-exit-variation:hover {
+  background: #f0ba54;
   transform: translateY(-1px);
 }
-.player-choice-btn:active {
+.btn-exit-variation:active {
   transform: translateY(0);
-}
-#btnAnalyzeWhite {
-  background: #f0d9b5;
-  color: #312e2b;
-}
-#btnAnalyzeBlack {
-  background: #5c4033;
-  color: #d9c4a5;
-}
-#btnAnalyzeBoth {
-  background: #4a4845;
-  color: #fff;
 }
 
 /* ================================================================
    MOVE LIST
    ================================================================ */
+/* ---- Opening Name Banner ---- */
+.opening-name {
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent-green);
+  background: var(--bg-panel-alt);
+  border-bottom: 1px solid var(--border-color);
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.opening-name::before {
+  content: "📖 ";
+}
+
 #move-list-container {
   background: var(--bg-panel);
   border-radius: 8px;
