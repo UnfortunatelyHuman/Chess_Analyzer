@@ -28,111 +28,153 @@
 
 <body>
 
-    <div class="main-layout">
+    <div id="app-wrapper">
 
-        <div class="app-container">
-            <div id="eval-bar-container">
-                <div id="eval-score">0.0</div>
-                <div id="eval-fill"></div>
+        <nav class="app-sidebar">
+            <div class="sidebar-logo">♞</div>
+            <div class="sidebar-menu">
+                <button class="nav-item active" title="Analyze">🎯</button>
+                <button class="nav-item" title="Train">⚔️</button>
+                <button class="nav-item" title="Library">📚</button>
+                <button class="nav-item" title="Settings">⚙️</button>
             </div>
+        </nav>
 
-            <div id="board-container">
-                <div id="board-wrapper">
-                    <div class="player-profile top-player">
-                        <div class="player-info">
-                            <div class="player-avatar"></div>
-                            <div class="player-details">
-                                <div class="player-name-row">
-                                    <span class="player-name">Opponent</span>
-                                    <span class="material-score"></span>
+        <div id="main-content-wrapper">
+
+            <header class="app-header">
+                <div class="header-title">Chess Analyzer Pro</div>
+                <div class="header-user">
+                    <span class="user-badge">unfortunatelyhuman</span>
+                    <div class="user-avatar-small"></div>
+                </div>
+            </header>
+
+            <div class="main-layout">
+
+                <div class="app-container">
+                    <div id="eval-bar-container">
+                        <div id="eval-score">0.0</div>
+                        <div id="eval-fill"></div>
+                    </div>
+
+                    <div id="board-container">
+                        <div id="board-wrapper">
+                            <div class="player-profile top-player">
+                                <div class="player-info">
+                                    <div class="player-avatar"></div>
+                                    <div class="player-details">
+                                        <div class="player-name-row">
+                                            <span class="player-name">Opponent</span>
+                                            <span class="material-score"></span>
+                                        </div>
+                                        <div class="captured-pieces"></div>
+                                    </div>
                                 </div>
-                                <div class="captured-pieces"></div>
+                                <div class="clock-display">10:00</div>
+                            </div>
+                            <div id="board"></div>
+                            <div class="player-profile bottom-player">
+                                <div class="player-info">
+                                    <div class="player-avatar"></div>
+                                    <div class="player-details">
+                                        <div class="player-name-row">
+                                            <span class="player-name">You</span>
+                                            <span class="material-score"></span>
+                                        </div>
+                                        <div class="captured-pieces"></div>
+                                    </div>
+                                </div>
+                                <div class="clock-display">10:00</div>
                             </div>
                         </div>
-                        <div class="clock-display">10:00</div>
                     </div>
-                    <div id="board"></div>
-                    <div class="player-profile bottom-player">
-                        <div class="player-info">
-                            <div class="player-avatar"></div>
-                            <div class="player-details">
-                                <div class="player-name-row">
-                                    <span class="player-name">You</span>
-                                    <span class="material-score"></span>
+                </div>
+
+                <div class="side-panel">
+
+                    <div class="training-header" style="background: var(--bg-panel-alt); padding: 10px; border-bottom: 1px solid var(--border-color); display: flex; gap: 10px;">
+                        <select id="scenario-select" style="flex: 1; padding: 6px; background: var(--bg-panel); color: #fff; border: 1px solid var(--border-color); border-radius: 4px; font-family: inherit; font-size: 13px;">
+                            <option value="start">Standard Game</option>
+                            <optgroup label="Openings">
+                                <option value="r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3">Ruy Lopez (Spanish)</option>
+                                <option value="r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3">Italian Game</option>
+                                <option value="rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2">Sicilian Defense</option>
+                            </optgroup>
+                            <optgroup label="Endgames">
+                                <option value="8/8/8/8/8/2k5/8/R2K4 w - - 0 1">Rook &amp; King vs King</option>
+                                <option value="8/8/8/8/8/2k5/p7/2K5 w - - 0 1">Pawn Promotion Race</option>
+                            </optgroup>
+                        </select>
+                        <button id="btnSparringMode" style="background: var(--accent-green); color: white; border: none; border-radius: 4px; padding: 0 12px; cursor: pointer; font-weight: bold; font-size: 12px; white-space: nowrap;">Train vs AI</button>
+                    </div>
+
+                    <div id="player-choice-panel" class="player-choice-panel" style="display: none;">
+                        <p class="player-choice-title">Analyze moves for which player?</p>
+                        <div class="player-choice-buttons">
+                            <button type="button" id="btnAnalyzeWhite" class="player-choice-btn">White</button>
+                            <button type="button" id="btnAnalyzeBlack" class="player-choice-btn">Black</button>
+                            <button type="button" id="btnAnalyzeBoth" class="player-choice-btn">Both</button>
+                        </div>
+                    </div>
+
+                    <div id="move-list-container">
+                        <div class="move-list-header">Moves</div>
+                        <div class="move-list-body"></div>
+                    </div>
+
+                    <div class="coach-panel">
+
+                        <div class="tabs-container">
+                            <button class="tab-btn active" data-target="tab-coach">Coach</button>
+                            <button class="tab-btn" data-target="tab-analysis">Analysis</button>
+                            <button class="tab-btn" data-target="tab-review">Review</button>
+                        </div>
+
+                        <div id="variation-banner" style="display: none; background: #5b8bb4; color: #fff; padding: 8px 16px; font-size: 12px; font-weight: bold; justify-content: space-between; align-items: center;">
+                            <span>🔀 Exploring Variation</span>
+                            <button id="btnExitVariation" style="background: rgba(0,0,0,0.3); color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600;">Return to Game</button>
+                        </div>
+
+                        <div id="tab-coach" class="tab-content active">
+                            <div class="coach-bubble">
+                                <div class="coach-avatar">🤖</div>
+                                <div class="coach-content">
+                                    <span id="coach-title">I'm ready!</span>
+                                    <span id="coach-text">Load a PGN game to start your lesson.</span>
                                 </div>
-                                <div class="captured-pieces"></div>
                             </div>
                         </div>
-                        <div class="clock-display">10:00</div>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <div class="side-panel">
+                        <div id="tab-analysis" class="tab-content" style="display: none;">
+                            <div class="analysis-header">
+                                <span id="analysis-eval">0.00</span>
+                                <span id="analysis-depth">Depth 0</span>
+                            </div>
+                            <div id="analysis-line" class="analysis-line">Waiting for engine...</div>
+                        </div>
 
-            <div id="player-choice-panel" class="player-choice-panel" style="display: none;">
-                <p class="player-choice-title">Analyze moves for which player?</p>
-                <div class="player-choice-buttons">
-                    <button type="button" id="btnAnalyzeWhite" class="player-choice-btn">White</button>
-                    <button type="button" id="btnAnalyzeBlack" class="player-choice-btn">Black</button>
-                    <button type="button" id="btnAnalyzeBoth" class="player-choice-btn">Both</button>
-                </div>
-            </div>
+                        <div id="tab-review" class="tab-content" style="display: none; padding: 15px;">
+                            <div id="scorecard-container"></div>
+                        </div>
 
-            <div id="move-list-container">
-                <div class="move-list-header">Moves</div>
-                <div class="move-list-body"></div>
-            </div>
+                        <div class="controls">
+                            <button id="btnFirst" class="secondary" title="First move">|◀</button>
+                            <button id="btnPrev" class="secondary" title="Previous move">◀</button>
+                            <button id="btnNext" class="primary" title="Next move">▶</button>
+                            <button id="btnLast" class="secondary" title="Last move">▶|</button>
+                            <button id="btnFlip" class="secondary" title="Flip board">🔃</button>
+                        </div>
 
-            <div class="coach-panel">
-
-                <div class="tabs-container">
-                    <button class="tab-btn active" data-target="tab-coach">Coach</button>
-                    <button class="tab-btn" data-target="tab-analysis">Analysis</button>
-                    <button class="tab-btn" data-target="tab-review">Review</button>
-                </div>
-
-                <div id="variation-banner" style="display: none; background: #5b8bb4; color: #fff; padding: 8px 16px; font-size: 12px; font-weight: bold; justify-content: space-between; align-items: center;">
-                    <span>🔀 Exploring Variation</span>
-                    <button id="btnExitVariation" style="background: rgba(0,0,0,0.3); color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600;">Return to Game</button>
-                </div>
-
-                <div id="tab-coach" class="tab-content active">
-                    <div class="coach-bubble">
-                        <div class="coach-avatar">🤖</div>
-                        <div class="coach-content">
-                            <span id="coach-title">I'm ready!</span>
-                            <span id="coach-text">Load a PGN game to start your lesson.</span>
+                        <div class="setup-toggle" id="toggle-setup">Paste PGN Game 👇</div>
+                        <div id="setup-area">
+                            <textarea id="pgnInput" placeholder='[Event "My Game"]...'></textarea>
+                            <button id="btnLoad">Analyze Game</button>
                         </div>
                     </div>
+
                 </div>
 
-                <div id="tab-analysis" class="tab-content" style="display: none;">
-                    <div class="analysis-header">
-                        <span id="analysis-eval">0.00</span>
-                        <span id="analysis-depth">Depth 0</span>
-                    </div>
-                    <div id="analysis-line" class="analysis-line">Waiting for engine...</div>
-                </div>
-
-                <div id="tab-review" class="tab-content" style="display: none; padding: 15px;">
-                    <div id="scorecard-container"></div>
-                </div>
-
-                <div class="controls">
-                    <button id="btnFirst" class="secondary" title="First move">|◀</button>
-                    <button id="btnPrev" class="secondary" title="Previous move">◀</button>
-                    <button id="btnNext" class="primary" title="Next move">▶</button>
-                    <button id="btnLast" class="secondary" title="Last move">▶|</button>
-                    <button id="btnFlip" class="secondary" title="Flip board">🔃</button>
-                </div>
-
-                <div class="setup-toggle" id="toggle-setup">Paste PGN Game 👇</div>
-                <div id="setup-area">
-                    <textarea id="pgnInput" placeholder='[Event "My Game"]...'></textarea>
-                    <button id="btnLoad">Analyze Game</button>
-                </div>
             </div>
 
         </div>

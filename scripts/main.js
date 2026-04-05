@@ -55,6 +55,8 @@ let isVariation = false;
 /** Touch swipe tracking */
 let touchStartX = 0;
 let touchEndX = 0;
+/** Sparring / Training mode */
+let isSparringMode = false;
 
 $(document).ready(function () {
   initEngine(handleEngineMessage);
@@ -126,6 +128,46 @@ $(document).ready(function () {
 
     // 5. Safely reset the board to the start of the main line
     jumpToStart();
+  });
+
+  // --- Training Hub Controls ---
+  $("#scenario-select").on("change", function () {
+    const fen = $(this).val();
+    if (fen === "start") {
+      game.reset();
+    } else {
+      game.load(fen);
+    }
+    moves = [];
+    clockTimes = [];
+    moveClassifications = [];
+    currentMoveIndex = 0;
+    currentEval = 0.0;
+    prevEval = 0.0;
+    isVariation = false;
+    $("#variation-banner").hide();
+    board.position(game.fen());
+    renderMoveList(moves);
+    highlightActiveMove(-1);
+    clearSuggestedMoveHighlight();
+    clearLastMoveHighlight();
+    syncMaterial();
+    updateEvalBar(0);
+    updateCoach("Position Loaded", "Make a move or enable Sparring Mode to play vs Stockfish.", "neutral");
+    currentEnginePV = "Calculating...";
+    updateAnalysisView(currentEngineScore, currentEngineDepth, currentEnginePV);
+    analyzePosition(game.fen());
+  });
+
+  $("#btnSparringMode").on("click", function () {
+    isSparringMode = !isSparringMode;
+    if (isSparringMode) {
+      $(this).text("Stop Training").css("background", "#b33430");
+      updateCoach("Sparring Mode", "Play a move! Stockfish will reply automatically.", "neutral");
+    } else {
+      $(this).text("Train vs AI").css("background", "var(--accent-green)");
+      updateCoach("Sparring Mode", "Sparring mode disabled.", "neutral");
+    }
   });
 });
 
@@ -670,6 +712,31 @@ function handleEngineMessage(msg) {
     }
     prevEval = currentEval;
     generateScorecard();
+
+    // --- Sparring Mode: AI auto-play ---
+    if (isSparringMode && !game.game_over() && game.turn() !== board.orientation().charAt(0)) {
+      setTimeout(() => {
+        const from = bestEngineMove.substring(0, 2);
+        const to = bestEngineMove.substring(2, 4);
+        const prom = bestEngineMove.length > 4 ? bestEngineMove[4] : "q";
+        const aiMove = game.move({ from: from, to: to, promotion: prom });
+        if (aiMove) {
+          moves = moves.slice(0, currentMoveIndex);
+          moves.push(aiMove);
+          currentMoveIndex++;
+          board.position(game.fen());
+          highlightLastMove(from, to);
+          renderMoveList(moves);
+          highlightActiveMove(currentMoveIndex - 1);
+          syncMaterial();
+          playFeedback(aiMove.captured ? "capture" : "move");
+          updateCoach("Your Turn", "Stockfish played. Make your move!", "neutral");
+          currentEnginePV = "Calculating...";
+          updateAnalysisView(currentEngineScore, currentEngineDepth, currentEnginePV);
+          analyzePosition(game.fen());
+        }
+      }, 500);
+    }
   }
 }
 
