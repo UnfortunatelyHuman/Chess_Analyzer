@@ -193,6 +193,7 @@ export function renderMoveList(moves) {
 }
 
 /** Highlight the active move in the move list and scroll it into view. */
+/** Highlight the active move in the move list and safely scroll ONLY the container. */
 export function highlightActiveMove(moveIndex) {
   $(".move-list-body .move-active").removeClass("move-active");
 
@@ -201,7 +202,19 @@ export function highlightActiveMove(moveIndex) {
   const target = $(`.move-list-body [data-move-index="${moveIndex}"]`);
   if (target.length) {
     target.addClass("move-active");
-    target[0].scrollIntoView({ behavior: "smooth", block: "center" });
+
+    // Safely scroll the container without moving the parent window
+    const container = $(".move-list-body");
+
+    // Calculate the position relative to the container's current scroll
+    const scrollPos =
+      container.scrollTop() +
+      target.position().top -
+      container.height() / 2 +
+      target.height() / 2;
+
+    // Stop any current scrolling animation and smoothly scroll to the new target
+    container.stop().animate({ scrollTop: scrollPos }, 150);
   }
 }
 

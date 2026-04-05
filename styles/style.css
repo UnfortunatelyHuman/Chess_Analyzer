@@ -897,18 +897,24 @@ textarea:focus {
    MOBILE LAYOUT — screens ≤ 800px
    ================================================================ */
 @media (max-width: 800px) {
+  /* 1. Put the sidebar at the bottom */
   #app-wrapper {
     flex-direction: column-reverse;
   }
 
+  /* 2. Style the bottom navigation bar */
   .app-sidebar {
     width: 100%;
     height: 60px;
+    flex-shrink: 0;
     flex-direction: row;
     justify-content: space-around;
+    align-items: center;
     padding: 0;
     border-right: none;
     border-top: 1px solid var(--border-color);
+    background: var(--bg-panel);
+    z-index: 100;
   }
 
   .sidebar-logo {
@@ -918,43 +924,63 @@ textarea:focus {
   .sidebar-menu {
     flex-direction: row;
     justify-content: space-around;
+    align-items: center;
     gap: 0;
+  }
+
+  .nav-item {
+    padding: 0;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
 
   .nav-item.active::before {
     top: 0;
-    left: 10%;
-    width: 80%;
-    height: 4px;
-    border-radius: 0 0 4px 4px;
+    left: 20%;
+    width: 60%;
+    height: 3px;
+    border-radius: 0 0 3px 3px;
   }
 
   .nav-item::after {
     display: none;
   }
 
-  .app-header {
-    padding: 0 16px;
+  /* 3. Make the main content area scrollable like a native app */
+  #main-content-wrapper {
+    height: calc(100vh - 60px);
+    overflow-y: auto;
+    overflow-x: hidden;
   }
 
   .main-layout {
     flex-direction: column;
-    align-items: stretch;
-    gap: 0;
-    max-width: 100%;
     height: auto;
-    overflow-y: auto;
+    overflow: visible;
   }
 
+  /* 4. Fix the Board sizing so it fits exactly on a narrow phone screen */
   .app-container {
-    width: 100%;
-    max-width: 100%;
-    flex: 1 1 auto;
-    border-radius: 0;
-    padding: 0;
+    flex: 0 0 auto;
+    padding: 10px;
+    gap: 10px;
     height: auto;
+    width: 100%;
   }
 
+  #board-wrapper {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  #eval-bar-container {
+    min-width: 24px;
+    width: 24px;
+  }
+
+  /* 5. Stack the side panel below the board smoothly */
   .side-panel {
     flex: 1 1 auto;
     width: 100%;
@@ -962,22 +988,12 @@ textarea:focus {
     height: auto;
     overflow: visible;
     border-left: none;
-  }
-
-  #eval-bar-container {
-    height: auto;
-    align-self: stretch;
-  }
-
-  #move-list-container {
-    border-radius: 0;
-  }
-
-  .coach-panel {
-    border-radius: 0;
+    border-top: 1px solid var(--border-color);
+    padding: 15px;
   }
 
   .move-list-body {
-    height: 160px;
+    height: auto;
+    max-height: 250px;
   }
 }

@@ -58,6 +58,10 @@ let touchStartX = 0;
 let touchEndX = 0;
 /** Sparring / Training mode */
 let isSparringMode = false;
+/** Quiz / Mistake Review mode */
+let isQuizMode = false;
+let mistakeIndices = [];
+let currentBestMoveUCI = null;
 
 $(document).ready(function () {
   initEngine(handleEngineMessage);
@@ -108,9 +112,12 @@ $(document).ready(function () {
 
   // Exit variation: restore original game
   $("#btnExitVariation").on("click", function () {
-    // 1. Exit variation mode
+    // 1. Exit variation mode and quiz mode
     isVariation = false;
+    isQuizMode = false;
     $("#variation-banner").hide();
+    $("#variation-banner").find("span").text("🔀 Exploring Variation");
+    $("#btnExitVariation").text("Return to Game");
 
     // 2. Restore the original tracking arrays
     moves = [...originalMoves];
@@ -170,6 +177,15 @@ $(document).ready(function () {
       updateCoach("Sparring Mode", "Sparring mode disabled.", "neutral");
     }
   });
+
+  // --- Mistake Review / Quiz Mode ---
+  $("#btnReviewMistakes").on("click", function () {
+    if (mistakeIndices.length === 0) return;
+    isQuizMode = true;
+    $("#variation-banner").css("display", "flex").find("span").text("🧠 Mistake Review Mode");
+    $("#btnExitVariation").text("Exit Review");
+    loadNextMistake();
+  });
 });
 
 // --- TOUCH SWIPE GESTURES ---
@@ -204,6 +220,20 @@ function onDragStart(source, piece, position, orientation) {
 }
 
 function onDrop(source, target) {
+  // Quiz Mode intercept — check the guess without modifying the game
+  if (isQuizMode) {
+    const uciMove = source + target;
+    if (uciMove === currentBestMoveUCI || uciMove + "q" === currentBestMoveUCI) {
+      playFeedback("move");
+      updateCoach("Brilliant! ⭐", "You found the best move!", "good");
+      setTimeout(loadNextMistake, 2000);
+    } else {
+      playFeedback("blunder");
+      updateCoach("Not quite ❌", "That wasn't the best move. Keep looking!", "bad");
+    }
+    return "snapback";
+  }
+
   let moveObj = game.move({ from: source, to: target, promotion: "q" });
   if (moveObj === null) return "snapback";
   if (moveObj.captured) playFeedback('capture');
@@ -692,6 +722,7 @@ function handleEngineMessage(msg) {
   // Handle the final "bestmove" trigger
   if (msg.includes("bestmove")) {
     let bestEngineMove = msg.split(" ")[1];
+    currentBestMoveUCI = bestEngineMove;
 
     if (pendingSelectedPlayerMove) {
       storedSelectedPlayerBestMove = bestEngineMove;
@@ -864,4 +895,53 @@ function generateScorecard() {
   const blackAcc = blackScoreCount > 0 ? Math.round(blackScoreSum / blackScoreCount) : "--";
 
   renderScorecard(whiteCounts, blackCounts, whiteAcc, blackAcc);
+
+  // Populate mistake indices for Quiz Mode
+  mistakeIndices = [];
+  for (let i = 0; i < moveClassifications.length; i++) {
+    const cls = moveClassifications[i];
+    if (cls === "blunder" || cls === "mistake") {
+      const isWhiteMove = i % 2 === 0;
+      if (
+        analyzeForColor === "both" ||
+        (analyzeForColor === "white" && isWhiteMove) ||
+        (analyzeForColor === "black" && !isWhiteMove)
+      ) {
+        mistakeIndices.push(i);
+      }
+    }
+  }
+
+  if (mistakeIndices.length > 0) {
+    $("#btnReviewMistakes")
+      .show()
+      .text(`Learn From Mistakes (${mistakeIndices.length})`);
+  } else {
+    $("#btnReviewMistakes").hide();
+  }
+}
+
+/** Load the next mistake position as an interactive quiz. */
+function loadNextMistake() {
+  if (mistakeIndices.length === 0) {
+    isQuizMode = false;
+    $("#variation-banner").hide();
+    $("#variation-banner").find("span").text("🔀 Exploring Variation");
+    $("#btnExitVariation").text("Return to Game");
+    updateCoach("Review Complete! 🎉", "You have reviewed all your mistakes. Great work!", "good");
+    return;
+  }
+
+  // Switch to Coach tab so they can see the instructions
+  $(".tab-btn[data-target='tab-coach']").click();
+
+  const blunderIndex = mistakeIndices.shift();
+  // Jump to the position exactly BEFORE the blunder occurred
+  jumpToMove(blunderIndex - 1);
+
+  updateCoach(
+    "Find the Best Move 🎯",
+    "You made a mistake here. Can you find the engine's top choice? Drag that piece!",
+    "bad",
+  );
 }
