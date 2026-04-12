@@ -339,3 +339,63 @@ export function renderScorecard(whiteCounts, blackCounts, whiteAccuracy, blackAc
 
   $("#scorecard-container").html(html);
 }
+
+/** Draw an SVG arrow using exact bounding boxes to prevent a8 origin bugs. */
+export function drawArrow(fromSquare, toSquare, type = "engine") {
+  const fromEl = document.querySelector(`#board .square-${fromSquare}`);
+  const toEl = document.querySelector(`#board .square-${toSquare}`);
+  const boardStack = document.getElementById("board-stack");
+  if (!fromEl || !toEl || !boardStack) return;
+
+  const stackRect = boardStack.getBoundingClientRect();
+  const fromRect = fromEl.getBoundingClientRect();
+  const toRect = toEl.getBoundingClientRect();
+
+  const startX = fromRect.left - stackRect.left + fromRect.width / 2;
+  const startY = fromRect.top - stackRect.top + fromRect.height / 2;
+  const endX = toRect.left - stackRect.left + toRect.width / 2;
+  const endY = toRect.top - stackRect.top + toRect.height / 2;
+
+  const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+  line.setAttribute("x1", startX);
+  line.setAttribute("y1", startY);
+  line.setAttribute("x2", endX);
+  line.setAttribute("y2", endY);
+  line.setAttribute("class", `arrow-line arrow-${type}`);
+
+  $("#arrow-overlay").append(line);
+}
+
+/** Clear arrows from the SVG overlay. Pass type to clear only engine or user arrows. */
+export function clearArrows(type) {
+  if (type) {
+    $(`#arrow-overlay .arrow-${type}`).remove();
+  } else {
+    $("#arrow-overlay line").remove();
+  }
+}
+
+/** Mathematically find which square physically contains the x/y pixel. */
+export function getSquareFromCoords(x, y) {
+  let foundSquare = null;
+  const squares = document.querySelectorAll("#board [class*='square-']");
+
+  for (let i = 0; i < squares.length; i++) {
+    const rect = squares[i].getBoundingClientRect();
+    if (
+      x >= rect.left &&
+      x <= rect.right &&
+      y >= rect.top &&
+      y <= rect.bottom
+    ) {
+      const classes = Array.from(squares[i].classList);
+      // THE FIX: Strictly match 'square-' followed by a valid chess coordinate (a-h, 1-8)
+      const sqClass = classes.find((c) => /^square-[a-h][1-8]$/.test(c));
+      if (sqClass) {
+        foundSquare = sqClass.split("-")[1];
+        break;
+      }
+    }
+  }
+  return foundSquare;
+}

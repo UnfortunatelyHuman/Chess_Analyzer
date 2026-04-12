@@ -23,11 +23,16 @@ import {
   updateCapturedPieces,
   renderScorecard,
   playFeedback,
+  drawArrow,
+  clearArrows,
+  getSquareFromCoords,
 } from "./ui.js";
 import { getOpeningName } from "./eco.js";
 
 let board = null;
 let game = new Chess();
+let savedGames =
+  JSON.parse(localStorage.getItem("chessAnalyzerLibrary")) || [];
 let moves = [];
 let clockTimes = [];
 let moveClassifications = [];
@@ -158,6 +163,7 @@ $(document).ready(function () {
     renderMoveList(moves);
     highlightActiveMove(-1);
     clearSuggestedMoveHighlight();
+    clearArrows("engine");
     clearLastMoveHighlight();
     syncMaterial();
     updateEvalBar(0);
@@ -185,6 +191,194 @@ $(document).ready(function () {
     $("#variation-banner").css("display", "flex").find("span").text("🧠 Mistake Review Mode");
     $("#btnExitVariation").text("Exit Review");
     loadNextMistake();
+  });
+
+  // --- Save to Library ---
+  $("#btnSaveGame").on("click", function () {
+    const pgnData = $("#pgnInput").val();
+    if (!pgnData) {
+      updateCoach("Nothing to save", "Load a PGN game first.", "bad");
+      return;
+    }
+
+    const newGame = {
+      id: Date.now(),
+      white: whitePlayerName || "White",
+      black: blackPlayerName || "Black",
+      date: new Date().toLocaleDateString(),
+      pgn: pgnData,
+    };
+
+    savedGames.push(newGame);
+    localStorage.setItem("chessAnalyzerLibrary", JSON.stringify(savedGames));
+
+    playFeedback("move");
+    $(this)
+      .text("✅ Saved to Library")
+      .css("background", "var(--accent-green)")
+      .css("color", "white");
+    setTimeout(() => {
+      $(this).text("💾 Save to Library").css("background", "").css("color", "");
+    }, 2000);
+  });
+
+  // --- Library Modal ---
+  $(".nav-item[title='Library']").on("click", function () {
+    $(".nav-item").removeClass("active");
+    $(this).addClass("active");
+    renderLibrary();
+    $("#library-modal").fadeIn(150).css("display", "flex");
+  });
+
+  $("#btnCloseLibrary").on("click", function () {
+    $("#library-modal").fadeOut(150);
+    $(".nav-item[title='Library']").removeClass("active");
+    $(".nav-item[title='Analyze']").addClass("active");
+  });
+
+  $("#library-list").on("click", ".saved-game-card", function (e) {
+    if ($(e.target).hasClass("delete-game-btn")) return;
+
+    const id = $(this).data("id");
+    const gameToLoad = savedGames.find((g) => g.id === id);
+    if (gameToLoad) {
+      $("#pgnInput").val(gameToLoad.pgn);
+      $("#library-modal").fadeOut(150);
+      $(".nav-item[title='Library']").removeClass("active");
+      $(".nav-item[title='Analyze']").addClass("active");
+      $(".tab-btn[data-target='tab-coach']").click();
+      loadGame();
+    }
+  });
+
+  $("#library-list").on("click", ".delete-game-btn", function (e) {
+    e.stopPropagation();
+    const id = $(this).data("id");
+    savedGames = savedGames.filter((g) => g.id !== id);
+    localStorage.setItem("chessAnalyzerLibrary", JSON.stringify(savedGames));
+    renderLibrary();
+  });
+
+  // --- The Chess.com Way: Math-Based Arrows & Strict Context Nuke ---
+
+  // 1. Ultimate Global Context Menu Blocker
+  // Nuke the right-click menu entirely across the whole application
+  document.addEventListener(
+    "contextmenu",
+    function (e) {
+      e.preventDefault();
+      return false;
+    },
+    { capture: true, passive: false },
+  );
+  window.oncontextmenu = function () {
+    return false;
+  };
+
+  let rightClickStartSquare = null;
+  let tempArrow = null;
+
+  // 2. Exact bounding box center calculation
+  function getSquareCenter(square) {
+    const el = document.querySelector(`#board .square-${square}`);
+    const boardStack = document.getElementById("board-stack");
+    if (!el || !boardStack) return null;
+
+    const elRect = el.getBoundingClientRect();
+    const stackRect = boardStack.getBoundingClientRect();
+
+    return {
+      x: elRect.left - stackRect.left + elRect.width / 2,
+      y: elRect.top - stackRect.top + elRect.height / 2,
+    };
+  }
+
+  // 3. Mousedown (Start drawing)
+  document.addEventListener(
+    "mousedown",
+    function (e) {
+      const boardStack = document.getElementById("board-stack");
+      if (!boardStack || !boardStack.contains(e.target)) return;
+
+      const isRightClick =
+        e.button === 2 || e.which === 3 || (e.button === 0 && e.ctrlKey);
+
+      if (isRightClick) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        rightClickStartSquare = getSquareFromCoords(e.clientX, e.clientY);
+
+        if (rightClickStartSquare) {
+          const center = getSquareCenter(rightClickStartSquare);
+          if (center) {
+            tempArrow = document.createElementNS(
+              "http://www.w3.org/2000/svg",
+              "line",
+            );
+            tempArrow.setAttribute("x1", center.x);
+            tempArrow.setAttribute("y1", center.y);
+            tempArrow.setAttribute("x2", center.x);
+            tempArrow.setAttribute("y2", center.y);
+            tempArrow.setAttribute("class", "arrow-line arrow-user");
+            tempArrow.setAttribute("opacity", "0.6");
+            document.getElementById("arrow-overlay").appendChild(tempArrow);
+          }
+        }
+      } else if (e.button === 0 || e.which === 1) {
+        clearArrows("user");
+      }
+    },
+    { capture: true },
+  );
+
+  // 4. Mousemove (Math-based tracking)
+  document.addEventListener(
+    "mousemove",
+    function (e) {
+      if (rightClickStartSquare && tempArrow) {
+        const boardStack = document.getElementById("board-stack");
+        if (boardStack) {
+          const stackRect = boardStack.getBoundingClientRect();
+          const mouseX = e.clientX - stackRect.left;
+          const mouseY = e.clientY - stackRect.top;
+
+          tempArrow.setAttribute("x2", mouseX);
+          tempArrow.setAttribute("y2", mouseY);
+        }
+      }
+    },
+    { capture: true },
+  );
+
+  // 5. Mouseup (Finalize)
+  document.addEventListener(
+    "mouseup",
+    function (e) {
+      if (rightClickStartSquare) {
+        const isRightClick =
+          e.button === 2 || e.which === 3 || (e.button === 0 && e.ctrlKey);
+
+        if (isRightClick) {
+          const endSquare = getSquareFromCoords(e.clientX, e.clientY);
+
+          if (tempArrow) {
+            tempArrow.remove();
+            tempArrow = null;
+          }
+
+          if (endSquare && endSquare !== rightClickStartSquare) {
+            drawArrow(rightClickStartSquare, endSquare, "user");
+          }
+        }
+        rightClickStartSquare = null;
+      }
+    },
+    { capture: true },
+  );
+
+  $(window).resize(function () {
+    clearArrows();
   });
 });
 
@@ -257,6 +451,7 @@ function onDrop(source, target) {
 
   // Clean up pending engine state
   clearSuggestedMoveHighlight();
+  clearArrows("engine");
   pendingSelectedPlayerMove = false;
   waitingForEvalAfterSelectedMove = false;
   storedSelectedPlayerBestMove = null;
@@ -334,6 +529,7 @@ function loadGame() {
     );
     updateEvalBar(0);
     clearSuggestedMoveHighlight();
+    clearArrows("engine");
     clearLastMoveHighlight();
     hideSetupMenu();
     renderMoveList(moves);
@@ -385,6 +581,7 @@ function loadGame() {
 
 function nextMove() {
   clearSuggestedMoveHighlight();
+  clearArrows("engine");
   if (currentMoveIndex >= moves.length) {
     updateCoach("End of Game", "That's all the moves! How did you do?", "good");
     return;
@@ -433,6 +630,7 @@ function nextMove() {
 
 function prevMove() {
   clearSuggestedMoveHighlight();
+  clearArrows("engine");
   pendingSelectedPlayerMove = false;
   waitingForEvalAfterSelectedMove = false;
   storedSelectedPlayerBestMove = null;
@@ -464,6 +662,7 @@ function prevMove() {
 function jumpToMove(targetIndex) {
   // Clear any pending engine state
   clearSuggestedMoveHighlight();
+  clearArrows("engine");
   pendingSelectedPlayerMove = false;
   waitingForEvalAfterSelectedMove = false;
   storedSelectedPlayerBestMove = null;
@@ -496,6 +695,7 @@ function jumpToMove(targetIndex) {
 /** Jump back to the starting position. */
 function jumpToStart() {
   clearSuggestedMoveHighlight();
+  clearArrows("engine");
   clearLastMoveHighlight();
   pendingSelectedPlayerMove = false;
   waitingForEvalAfterSelectedMove = false;
@@ -728,6 +928,12 @@ function handleEngineMessage(msg) {
       storedSelectedPlayerBestMove = bestEngineMove;
       prevEval = currentEval;
       highlightSuggestedMove(storedSelectedPlayerBestMove);
+      clearArrows("engine");
+      drawArrow(
+        storedSelectedPlayerBestMove.substring(0, 2),
+        storedSelectedPlayerBestMove.substring(2, 4),
+        "engine",
+      );
       pendingSelectedPlayerMove = false;
       waitingForEvalAfterSelectedMove = true;
       updateCoach("Thinking...", "Calculating evaluation...", "neutral");
@@ -811,6 +1017,7 @@ function generateAdvice(current, previous, bestEngineMove) {
       text = `Evaluation is ${current.toFixed(1)}. Click Next to see ${analyzeForColor === "white" ? "White" : "Black"}'s next move.`;
     }
     clearSuggestedMoveHighlight();
+    clearArrows("engine");
     updateCoach(title, text, sentiment);
     return;
   }
@@ -944,4 +1151,31 @@ function loadNextMistake() {
     "You made a mistake here. Can you find the engine's top choice? Drag that piece!",
     "bad",
   );
+}
+
+/** Render the library modal contents from savedGames. */
+function renderLibrary() {
+  const list = $("#library-list");
+  list.empty();
+  if (savedGames.length === 0) {
+    list.append(
+      "<p style='color: var(--text-muted); text-align: center; font-size: 13px;'>No saved games yet. Analyze a game and click Save!</p>",
+    );
+    return;
+  }
+
+  const sorted = [...savedGames].sort((a, b) => b.id - a.id);
+
+  sorted.forEach((g) => {
+    const card = $(`
+      <div class="saved-game-card" data-id="${g.id}">
+        <div class="saved-game-info">
+          <span class="saved-game-title">⚪ ${g.white} vs ⚫ ${g.black}</span>
+          <span class="saved-game-date">${g.date}</span>
+        </div>
+        <button class="delete-game-btn" data-id="${g.id}">Delete</button>
+      </div>
+    `);
+    list.append(card);
+  });
 }

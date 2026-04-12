@@ -280,6 +280,28 @@ body {
   flex-direction: column-reverse !important;
 }
 
+#board img {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* ---- SVG Arrow Overlay ---- */
+.arrow-line {
+  stroke-width: 14;
+  opacity: 0.85;
+  stroke-linecap: round;
+}
+.arrow-engine {
+  stroke: var(--accent-green);
+  marker-end: url(#arrowhead-engine);
+}
+.arrow-user {
+  stroke: var(--accent-gold);
+  marker-end: url(#arrowhead-user);
+}
+
 /* ---- Player profile bars ---- */
 .player-profile {
   display: flex;
@@ -996,4 +1018,112 @@ textarea:focus {
     height: auto;
     max-height: 250px;
   }
+}
+
+/* ================================================================
+   MODALS
+   ================================================================ */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(4px);
+}
+.modal-content {
+  background: var(--bg-panel);
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+.modal-header {
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-panel-alt);
+}
+.modal-header h2 {
+  margin: 0;
+  font-size: 18px;
+  color: var(--text-primary);
+  font-weight: 800;
+}
+.close-btn {
+  background: transparent;
+  border: none;
+  font-size: 26px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.close-btn:hover {
+  color: #fff;
+}
+.library-list {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.saved-game-card {
+  background: var(--bg-panel-alt);
+  padding: 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.saved-game-card:hover {
+  border-color: var(--accent-green);
+  background: var(--bg-surface);
+}
+.saved-game-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  pointer-events: none;
+}
+.saved-game-title {
+  font-weight: 700;
+  color: #fff;
+  font-size: 14px;
+}
+.saved-game-date {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.delete-game-btn {
+  background: #b33430;
+  color: #fff;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  transition: background 0.2s;
+}
+.delete-game-btn:hover {
+  background: #d93d39;
 }
