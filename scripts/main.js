@@ -1,6 +1,6 @@
 // main.js - The Controller
 
-import { initEngine, analyzePosition } from "./engine.js";
+import { initEngine, analyzePosition, setEngineSkillLevel } from "./engine.js";
 import {
   updateCoach,
   updateEvalBar,
@@ -33,6 +33,13 @@ let board = null;
 let game = new Chess();
 let savedGames =
   JSON.parse(localStorage.getItem("chessAnalyzerLibrary")) || [];
+let userSettings = JSON.parse(
+  localStorage.getItem("chessAnalyzerSettings"),
+) || {
+  engineDepth: 14,
+  showEvalBar: true,
+  showArrows: true,
+};
 let moves = [];
 let clockTimes = [];
 let moveClassifications = [];
@@ -67,6 +74,10 @@ let isSparringMode = false;
 let isQuizMode = false;
 let mistakeIndices = [];
 let currentBestMoveUCI = null;
+/** Auto-Analyze state */
+let isAutoAnalyzing = false;
+let autoAnalyzeIndex = 0;
+let autoAnalyzeEvals = [];
 
 $(document).ready(function () {
   initEngine(handleEngineMessage);
@@ -170,18 +181,65 @@ $(document).ready(function () {
     updateCoach("Position Loaded", "Make a move or enable Sparring Mode to play vs Stockfish.", "neutral");
     currentEnginePV = "Calculating...";
     updateAnalysisView(currentEngineScore, currentEngineDepth, currentEnginePV);
-    analyzePosition(game.fen());
+    analyzePosition(game.fen(), userSettings.engineDepth);
   });
 
   $("#btnSparringMode").on("click", function () {
     isSparringMode = !isSparringMode;
     if (isSparringMode) {
+      const level = parseInt($("#sparring-level").val());
+      setEngineSkillLevel(level);
+      $("#sparring-level").show();
       $(this).text("Stop Training").css("background", "#b33430");
-      updateCoach("Sparring Mode", "Play a move! Stockfish will reply automatically.", "neutral");
+      updateCoach(
+        "Sparring Mode",
+        `Play a move! Stockfish (Level ${level}) will reply automatically.`,
+        "neutral",
+      );
     } else {
+      setEngineSkillLevel(20);
+      $("#sparring-level").hide();
       $(this).text("Train vs AI").css("background", "var(--accent-green)");
       updateCoach("Sparring Mode", "Sparring mode disabled.", "neutral");
     }
+  });
+
+  $("#sparring-level").on("change", function () {
+    if (isSparringMode) {
+      const level = parseInt($(this).val());
+      setEngineSkillLevel(level);
+      updateCoach(
+        "Difficulty Changed",
+        `Stockfish is now playing at level ${level}.`,
+        "neutral",
+      );
+    }
+  });
+
+  // --- Full Game Auto-Analyzer ---
+  $("#btnRunFullAnalysis").on("click", function () {
+    if (moves.length === 0) {
+      updateCoach(
+        "No game loaded",
+        "Load a PGN game first before running analysis.",
+        "bad",
+      );
+      return;
+    }
+    isAutoAnalyzing = true;
+    autoAnalyzeIndex = 0;
+    autoAnalyzeEvals = [0.0];
+    moveClassifications = new Array(moves.length).fill(null);
+
+    $("#auto-analyze-prompt").hide();
+    $("#scorecard-container")
+      .show()
+      .html(
+        '<div style="text-align: center; padding: 20px; color: var(--accent-green); font-weight: bold;">Analyzing Game: <span id="analyze-progress">0</span>%</div>',
+      );
+
+    game.reset();
+    analyzeNextMoveInLoop();
   });
 
   // --- Mistake Review / Quiz Mode ---
@@ -220,6 +278,196 @@ $(document).ready(function () {
     setTimeout(() => {
       $(this).text("💾 Save to Library").css("background", "").css("color", "");
     }, 2000);
+  });
+
+  // --- Settings Modal & State ---
+  function applySettings() {
+    $("#depth-display").text(userSettings.engineDepth);
+    $("#setting-depth").val(userSettings.engineDepth);
+    $("#setting-eval-bar").prop("checked", userSettings.showEvalBar);
+    $("#setting-arrows").prop("checked", userSettings.showArrows);
+
+    if (userSettings.showEvalBar) {
+      $("#eval-bar-container").show();
+    } else {
+      $("#eval-bar-container").hide();
+    }
+
+    if (!userSettings.showArrows) {
+      clearArrows("engine");
+    }
+
+    localStorage.setItem(
+      "chessAnalyzerSettings",
+      JSON.stringify(userSettings),
+    );
+  }
+
+  applySettings();
+
+  $(".nav-item[title='Settings']").on("click", function () {
+    $(".nav-item").removeClass("active");
+    $(this).addClass("active");
+    applySettings();
+    $("#settings-modal").fadeIn(150).css("display", "flex");
+  });
+
+  $("#btnCloseSettings").on("click", function () {
+    $("#settings-modal").fadeOut(150);
+    $(".nav-item[title='Settings']").removeClass("active");
+    $(".nav-item[title='Analyze']").addClass("active");
+
+    userSettings.engineDepth = parseInt($("#setting-depth").val());
+    userSettings.showEvalBar = $("#setting-eval-bar").is(":checked");
+    userSettings.showArrows = $("#setting-arrows").is(":checked");
+
+    applySettings();
+
+    if (moves.length > 0) {
+      updateCoach(
+        "Settings Saved",
+        `Engine depth set to ${userSettings.engineDepth}.`,
+        "neutral",
+      );
+      analyzePosition(game.fen(), userSettings.engineDepth);
+    }
+  });
+
+  $("#setting-depth").on("input", function () {
+    $("#depth-display").text($(this).val());
+  });
+
+  // --- Annotated PGN Export ---
+  $("#btnExportPGN").on("click", function () {
+    if (moves.length === 0) {
+      updateCoach("Nothing to export", "Load and analyze a game first.", "bad");
+      return;
+    }
+
+    let pgnString = "";
+
+    // 1. Add standard headers
+    const dateStr = new Date().toISOString().split("T")[0].replace(/-/g, ".");
+    pgnString += `[Event "Chess Analyzer Game"]\n`;
+    pgnString += `[Date "${dateStr}"]\n`;
+    pgnString += `[White "${whitePlayerName || "White"}"]\n`;
+    pgnString += `[Black "${blackPlayerName || "Black"}"]\n`;
+    pgnString += `[Result "*"]\n\n`;
+
+    // 2. Build the annotated move text
+    const symbolMap = {
+      blunder: "??",
+      mistake: "?",
+      inaccuracy: "?!",
+      good: "!",
+      best: "",
+    };
+
+    let currentMoveNum = 1;
+
+    for (let i = 0; i < moves.length; i++) {
+      // Print move number for White
+      if (i % 2 === 0) {
+        pgnString += `${currentMoveNum}. `;
+      }
+
+      // 3. Append the move
+      let san = moves[i].san;
+
+      // 4. Append the classification symbol (if any)
+      const classification = moveClassifications[i];
+      if (classification && symbolMap[classification]) {
+        san += symbolMap[classification];
+      }
+
+      pgnString += san + " ";
+
+      // 5. Add text comments for blunders/mistakes
+      if (classification === "blunder" || classification === "mistake") {
+        pgnString += `{ ${classification === "blunder" ? "Blunder." : "Mistake."} } `;
+      }
+
+      // Increment move number after Black's move
+      if (i % 2 !== 0) {
+        currentMoveNum++;
+      }
+    }
+
+    // 6. Copy to clipboard
+    navigator.clipboard
+      .writeText(pgnString.trim())
+      .then(() => {
+        const btn = $("#btnExportPGN");
+        const originalText = btn.text();
+        btn
+          .text("✅ Copied to Clipboard!")
+          .css("background", "var(--accent-green)")
+          .css("color", "white");
+        setTimeout(() => {
+          btn.text(originalText).css("background", "").css("color", "");
+        }, 2000);
+      })
+      .catch((err) => {
+        console.error("Could not copy text: ", err);
+        updateCoach("Export Failed", "Could not access clipboard.", "bad");
+      });
+  });
+
+  // --- Sidebar Navigation (SPA Router) ---
+
+  $(".nav-item[title='Analyze']").on("click", function () {
+    $(".nav-item").removeClass("active");
+    $(this).addClass("active");
+
+    $(".training-header").hide();
+    $("#toggle-setup").show();
+
+    // Safety: Turn off sparring mode if leaving the Train tab
+    if (isSparringMode) {
+      $("#btnSparringMode").click();
+    }
+
+    // Reset board to a clean analysis state
+    game.reset();
+    board.position("start");
+    moves = [];
+    currentMoveIndex = 0;
+    renderMoveList(moves);
+    clearArrows("engine");
+    clearArrows("user");
+    updateEvalBar(0);
+    $(".tab-btn[data-target='tab-coach']").click();
+    updateCoach(
+      "Analysis Mode 🎯",
+      "Make moves on the board or paste a PGN below to begin.",
+      "neutral",
+    );
+  });
+
+  $(".nav-item[title='Train']").on("click", function () {
+    $(".nav-item").removeClass("active");
+    $(this).addClass("active");
+
+    $(".training-header").css("display", "flex");
+    $("#toggle-setup").hide();
+    hideSetupMenu();
+
+    // Reset board to standard training state
+    game.reset();
+    board.position("start");
+    $("#scenario-select").val("start");
+    moves = [];
+    currentMoveIndex = 0;
+    renderMoveList(moves);
+    clearArrows("engine");
+    clearArrows("user");
+    updateEvalBar(0);
+    $(".tab-btn[data-target='tab-coach']").click();
+    updateCoach(
+      "Training Hub ⚔️",
+      "Select an endgame scenario above, or click 'Train vs AI' to spar from the starting position.",
+      "neutral",
+    );
   });
 
   // --- Library Modal ---
@@ -466,7 +714,7 @@ function onDrop(source, target) {
   updateCoach("Thinking...", "Analyzing custom variation...", "neutral");
   currentEnginePV = "Calculating...";
   updateAnalysisView(currentEngineScore, currentEngineDepth, currentEnginePV);
-  analyzePosition(game.fen());
+  analyzePosition(game.fen(), userSettings.engineDepth);
 }
 
 function onSnapEnd() {
@@ -568,7 +816,7 @@ function loadGame() {
         currentEngineDepth,
         currentEnginePV,
       );
-      analyzePosition(game.fen());
+      analyzePosition(game.fen(), userSettings.engineDepth);
     });
   } else {
     updateCoach(
@@ -625,7 +873,7 @@ function nextMove() {
   updateCoach("Thinking...", "Calculating the best moves...", "neutral");
   currentEnginePV = "Calculating...";
   updateAnalysisView(currentEngineScore, currentEngineDepth, currentEnginePV);
-  analyzePosition(game.fen());
+  analyzePosition(game.fen(), userSettings.engineDepth);
 }
 
 function prevMove() {
@@ -655,7 +903,7 @@ function prevMove() {
     );
     currentEnginePV = "Calculating...";
     updateAnalysisView(currentEngineScore, currentEngineDepth, currentEnginePV);
-    analyzePosition(game.fen());
+    analyzePosition(game.fen(), userSettings.engineDepth);
   }
 }
 
@@ -689,7 +937,7 @@ function jumpToMove(targetIndex) {
   if (lastMove && lastMove.captured) playFeedback('capture');
   else playFeedback('move');
   updateCoach("Thinking...", "Analyzing this position...", "neutral");
-  analyzePosition(game.fen());
+  analyzePosition(game.fen(), userSettings.engineDepth);
 }
 
 /** Jump back to the starting position. */
@@ -712,7 +960,7 @@ function jumpToStart() {
     "Back to the beginning. Click Next Move to step through.",
     "neutral",
   );
-  analyzePosition(game.fen());
+  analyzePosition(game.fen(), userSettings.engineDepth);
 }
 
 /** Flip the board and swap the UI orientation. */
@@ -924,16 +1172,28 @@ function handleEngineMessage(msg) {
     let bestEngineMove = msg.split(" ")[1];
     currentBestMoveUCI = bestEngineMove;
 
+    // Auto-Analyze intercept: capture eval and advance the loop
+    if (isAutoAnalyzing) {
+      autoAnalyzeEvals.push(currentEval);
+      let progress = Math.round((autoAnalyzeIndex / moves.length) * 100);
+      $("#analyze-progress").text(progress);
+      autoAnalyzeIndex++;
+      analyzeNextMoveInLoop();
+      return;
+    }
+
     if (pendingSelectedPlayerMove) {
       storedSelectedPlayerBestMove = bestEngineMove;
       prevEval = currentEval;
       highlightSuggestedMove(storedSelectedPlayerBestMove);
       clearArrows("engine");
-      drawArrow(
-        storedSelectedPlayerBestMove.substring(0, 2),
-        storedSelectedPlayerBestMove.substring(2, 4),
-        "engine",
-      );
+      if (userSettings.showArrows) {
+        drawArrow(
+          storedSelectedPlayerBestMove.substring(0, 2),
+          storedSelectedPlayerBestMove.substring(2, 4),
+          "engine",
+        );
+      }
       pendingSelectedPlayerMove = false;
       waitingForEvalAfterSelectedMove = true;
       updateCoach("Thinking...", "Calculating evaluation...", "neutral");
@@ -944,7 +1204,7 @@ function handleEngineMessage(msg) {
         currentEngineDepth,
         currentEnginePV,
       );
-      analyzePosition(game.fen());
+      analyzePosition(game.fen(), userSettings.engineDepth);
       return;
     }
 
@@ -982,7 +1242,7 @@ function handleEngineMessage(msg) {
           updateCoach("Your Turn", "Stockfish played. Make your move!", "neutral");
           currentEnginePV = "Calculating...";
           updateAnalysisView(currentEngineScore, currentEngineDepth, currentEnginePV);
-          analyzePosition(game.fen());
+          analyzePosition(game.fen(), userSettings.engineDepth);
         }
       }, 500);
     }
@@ -1178,4 +1438,44 @@ function renderLibrary() {
     `);
     list.append(card);
   });
+}
+
+/** Auto-analyze loop: feed positions one at a time and collect evals. */
+function analyzeNextMoveInLoop() {
+  if (autoAnalyzeIndex > moves.length) {
+    isAutoAnalyzing = false;
+
+    // Loop finished — classify all moves from collected evals
+    for (let i = 0; i < moves.length; i++) {
+      let prev = autoAnalyzeEvals[i];
+      let curr = autoAnalyzeEvals[i + 1];
+      let isWhiteMove = i % 2 === 0;
+      let delta = isWhiteMove ? curr - prev : prev - curr;
+
+      if (delta < -2.0) moveClassifications[i] = "blunder";
+      else if (delta < -0.8) moveClassifications[i] = "mistake";
+      else if (delta < -0.3) moveClassifications[i] = "inaccuracy";
+      else if (delta > 0.8) moveClassifications[i] = "good";
+      else moveClassifications[i] = "best";
+
+      addMoveClassificationIcon(i, moveClassifications[i]);
+    }
+
+    generateScorecard();
+    jumpToMove(moves.length - 1);
+    updateCoach(
+      "Analysis Complete! 📊",
+      "Check the Review tab to see your mistakes.",
+      "good",
+    );
+    return;
+  }
+
+  // Apply the next move (index 0 evaluates the starting position)
+  if (autoAnalyzeIndex > 0) {
+    game.move(moves[autoAnalyzeIndex - 1].san);
+  }
+
+  // Request shallow depth (10) for fast batch analysis
+  analyzePosition(game.fen(), 10);
 }

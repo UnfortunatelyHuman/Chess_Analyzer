@@ -24,8 +24,14 @@ export function initEngine(onMessageCallback) {
     .catch((err) => console.error("Failed to load engine:", err));
 }
 
-export function analyzePosition(fen) {
+export function analyzePosition(fen, depth = 18) {
   if (!isReady) return;
   stockfish.postMessage("position fen " + fen);
-  stockfish.postMessage("go depth 14"); // Depth 14 is fast but accurate enough for beginners
+  stockfish.postMessage("go depth " + depth);
+}
+
+// Limit Stockfish's power during Sparring Mode (level 0-20)
+export function setEngineSkillLevel(level) {
+  if (!isReady) return;
+  stockfish.postMessage("setoption name Skill Level value " + level);
 }

@@ -105,7 +105,7 @@
 
                 <div class="side-panel">
 
-                    <div class="training-header" style="background: var(--bg-panel-alt); padding: 10px; border-bottom: 1px solid var(--border-color); display: flex; gap: 10px;">
+                    <div class="training-header" style="background: var(--bg-panel-alt); padding: 10px; border-bottom: 1px solid var(--border-color); display: none; gap: 10px;">
                         <select id="scenario-select" style="flex: 1; padding: 6px; background: var(--bg-panel); color: #fff; border: 1px solid var(--border-color); border-radius: 4px; font-family: inherit; font-size: 13px;">
                             <option value="start">Standard Game</option>
                             <optgroup label="Openings">
@@ -117,6 +117,12 @@
                                 <option value="8/8/8/8/8/2k5/8/R2K4 w - - 0 1">Rook &amp; King vs King</option>
                                 <option value="8/8/8/8/8/2k5/p7/2K5 w - - 0 1">Pawn Promotion Race</option>
                             </optgroup>
+                        </select>
+                        <select id="sparring-level" style="padding: 6px; background: var(--bg-panel); color: #fff; border: 1px solid var(--border-color); border-radius: 4px; font-size: 13px; margin-right: 5px; display: none;">
+                            <option value="1">Beginner</option>
+                            <option value="5">Intermediate</option>
+                            <option value="10">Advanced</option>
+                            <option value="20" selected>Grandmaster</option>
                         </select>
                         <button id="btnSparringMode" style="background: var(--accent-green); color: white; border: none; border-radius: 4px; padding: 0 12px; cursor: pointer; font-weight: bold; font-size: 12px; white-space: nowrap;">Train vs AI</button>
                     </div>
@@ -169,9 +175,14 @@
                         </div>
 
                         <div id="tab-review" class="tab-content" style="display: none; padding: 15px;">
-                            <div id="scorecard-container"></div>
+                            <div id="auto-analyze-prompt" style="text-align: center; padding: 20px;">
+                                <button id="btnRunFullAnalysis" class="primary" style="width: 100%;">⚡ Run Game Report</button>
+                                <p style="font-size: 11px; color: var(--text-muted); margin-top: 10px;">This will analyze all moves to generate your scorecard.</p>
+                            </div>
+                            <div id="scorecard-container" style="display: none;"></div>
                             <button id="btnReviewMistakes" class="primary" style="width: 100%; margin-top: 15px; display: none;">Learn From Mistakes</button>
                             <button id="btnSaveGame" class="secondary" style="width: 100%; margin-top: 10px;">💾 Save to Library</button>
+                            <button id="btnExportPGN" class="secondary" style="width: 100%; margin-top: 10px;">📋 Copy Annotated PGN</button>
                         </div>
 
                         <div class="controls">
@@ -204,6 +215,42 @@
                 <button id="btnCloseLibrary" class="close-btn">&times;</button>
             </div>
             <div id="library-list" class="library-list"></div>
+        </div>
+    </div>
+
+    <div id="settings-modal" class="modal-overlay" style="display:none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚙️ Settings</h2>
+                <button id="btnCloseSettings" class="close-btn">&times;</button>
+            </div>
+            <div class="settings-body" style="padding: 20px; display: flex; flex-direction: column; gap: 20px;">
+
+                <div class="setting-group">
+                    <label style="font-weight: 700; color: #fff; display: flex; justify-content: space-between;">
+                        Engine Analysis Depth <span id="depth-display" style="color: var(--accent-green);">14</span>
+                    </label>
+                    <p style="font-size: 11px; color: var(--text-muted); margin: 5px 0 10px;">Lower depth is faster. Higher depth is more accurate.</p>
+                    <input type="range" id="setting-depth" min="10" max="20" value="14" style="width: 100%; cursor: pointer;">
+                </div>
+
+                <div class="setting-group" style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-weight: 700; color: #fff;">Show Evaluation Bar</div>
+                        <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Display the live advantage bar next to the board.</div>
+                    </div>
+                    <input type="checkbox" id="setting-eval-bar" checked style="width: 18px; height: 18px; cursor: pointer;">
+                </div>
+
+                <div class="setting-group" style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-weight: 700; color: #fff;">Show Engine Arrows</div>
+                        <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Draw green arrows for the engine's suggested move.</div>
+                    </div>
+                    <input type="checkbox" id="setting-arrows" checked style="width: 18px; height: 18px; cursor: pointer;">
+                </div>
+
+            </div>
         </div>
     </div>
 

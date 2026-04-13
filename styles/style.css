@@ -594,6 +594,7 @@ body {
   border: 1px solid var(--border-color);
   overflow: hidden;
   margin-bottom: 15px;
+  flex-shrink: 0;
 }
 
 .move-list-header {
@@ -705,7 +706,7 @@ body {
   background: var(--bg-panel);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  flex-shrink: 0;
 }
 
 /* ---- Tabs ---- */
