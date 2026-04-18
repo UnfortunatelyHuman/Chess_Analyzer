@@ -35,6 +35,7 @@
             <div class="sidebar-menu">
                 <button class="nav-item active" title="Analyze">🎯</button>
                 <button class="nav-item" title="Train">⚔️</button>
+                <button class="nav-item" title="Learn">🎓</button>
                 <button class="nav-item" title="Library">📚</button>
                 <button class="nav-item" title="Settings">⚙️</button>
             </div>
@@ -71,7 +72,7 @@
                                         <div class="captured-pieces"></div>
                                     </div>
                                 </div>
-                                <div class="clock-display">10:00</div>
+                                <div id="timer-black" class="player-timer">10:00</div>
                             </div>
                             <div id="board-stack" style="position: relative; width: 100%;" oncontextmenu="return false;">
                                 <div id="board"></div>
@@ -97,7 +98,7 @@
                                         <div class="captured-pieces"></div>
                                     </div>
                                 </div>
-                                <div class="clock-display">10:00</div>
+                                <div id="timer-white" class="player-timer">10:00</div>
                             </div>
                         </div>
                     </div>
@@ -105,7 +106,13 @@
 
                 <div class="side-panel">
 
-                    <div class="training-header" style="background: var(--bg-panel-alt); padding: 10px; border-bottom: 1px solid var(--border-color); display: none; gap: 10px;">
+                    <div class="training-header" style="display: none;">
+                        <select id="time-control-select" style="padding: 6px; background: var(--bg-panel); color: #fff; border: 1px solid var(--border-color); border-radius: 4px; font-size: 13px; margin-right: 5px;">
+                            <option value="60,0">Bullet (1|0)</option>
+                            <option value="180,2">Blitz (3|2)</option>
+                            <option value="300,5">Blitz (5|5)</option>
+                            <option value="600,0" selected>Rapid (10|0)</option>
+                        </select>
                         <select id="scenario-select" style="flex: 1; padding: 6px; background: var(--bg-panel); color: #fff; border: 1px solid var(--border-color); border-radius: 4px; font-family: inherit; font-size: 13px;">
                             <option value="start">Standard Game</option>
                             <optgroup label="Openings">
@@ -125,6 +132,7 @@
                             <option value="20" selected>Grandmaster</option>
                         </select>
                         <button id="btnSparringMode" style="background: var(--accent-green); color: white; border: none; border-radius: 4px; padding: 0 12px; cursor: pointer; font-weight: bold; font-size: 12px; white-space: nowrap;">Train vs AI</button>
+                        <button id="btnResignReview" style="background: #b33430; color: white; border: none; border-radius: 4px; padding: 0 12px; cursor: pointer; font-weight: bold; font-size: 12px; white-space: nowrap; display: none;">Resign</button>
                     </div>
 
                     <div id="player-choice-panel" class="player-choice-panel" style="display: none;">
@@ -134,6 +142,11 @@
                             <button type="button" id="btnAnalyzeBlack" class="player-choice-btn">Black</button>
                             <button type="button" id="btnAnalyzeBoth" class="player-choice-btn">Both</button>
                         </div>
+                    </div>
+
+                    <div id="learning-hub" style="display: none; padding: 15px;">
+                        <h2 style="margin: 0 0 15px 0; color: #fff; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">🎓 Academy</h2>
+                        <div id="lesson-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
                     </div>
 
                     <div id="opening-name" class="opening-name">Starting Position</div>
@@ -177,7 +190,7 @@
                         <div id="tab-review" class="tab-content" style="display: none; padding: 15px;">
                             <div id="auto-analyze-prompt" style="text-align: center; padding: 20px;">
                                 <button id="btnRunFullAnalysis" class="primary" style="width: 100%;">⚡ Run Game Report</button>
-                                <p style="font-size: 11px; color: var(--text-muted); margin-top: 10px;">This will analyze all moves to generate your scorecard.</p>
+                                <p id="analyze-warning-text" style="font-size: 11px; color: var(--text-muted); margin-top: 10px;">This will analyze all moves. Higher depth settings take longer.</p>
                             </div>
                             <div id="scorecard-container" style="display: none;"></div>
                             <button id="btnReviewMistakes" class="primary" style="width: 100%; margin-top: 15px; display: none;">Learn From Mistakes</button>
@@ -215,6 +228,17 @@
                 <button id="btnCloseLibrary" class="close-btn">&times;</button>
             </div>
             <div id="library-list" class="library-list"></div>
+        </div>
+    </div>
+
+    <div id="game-over-modal" class="modal-overlay" style="display:none;">
+        <div class="modal-content" style="max-width: 400px; text-align: center; padding: 30px 20px;">
+            <h2 id="game-over-title" style="margin: 0 0 10px 0; font-size: 24px; color: var(--accent-gold);">Game Over</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 25px; font-size: 14px;">Would you like to review your game and find your mistakes?</p>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button id="btnModalReview" class="primary" style="flex: 1;">🔍 Review Game</button>
+                <button id="btnModalClose" class="secondary" style="flex: 1;">Close</button>
+            </div>
         </div>
     </div>
 

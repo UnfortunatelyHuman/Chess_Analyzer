@@ -355,7 +355,8 @@ body {
 .player-profile.is-analyzing .player-name {
   color: var(--accent-green);
 }
-.clock-display {
+.clock-display,
+.player-timer {
   font-family: "Courier New", "SF Mono", monospace;
   font-size: 15px;
   font-weight: 700;
@@ -366,6 +367,41 @@ body {
   border-radius: 4px;
   letter-spacing: 0.04em;
   line-height: 1.3;
+  transition: all 0.2s;
+}
+.timer-active {
+  background: var(--accent-gold);
+  color: #000;
+  font-weight: 800;
+}
+.timer-low {
+  background: #b33430 !important;
+  color: #fff !important;
+}
+
+/* ---- Training Header Layout ---- */
+.training-header {
+  background: var(--bg-panel-alt);
+  padding: 12px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#time-control-select,
+#sparring-level {
+  flex: 1 1 45%;
+  min-width: 120px;
+}
+
+#btnSparringMode,
+#btnResignReview {
+  flex: 1 1 45%;
+  padding: 10px;
+  margin: 0;
 }
 
 /* ---- Captured Pieces (overlapping images) ---- */

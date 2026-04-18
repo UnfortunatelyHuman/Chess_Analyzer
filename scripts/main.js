@@ -31,8 +31,7 @@ import { getOpeningName } from "./eco.js";
 
 let board = null;
 let game = new Chess();
-let savedGames =
-  JSON.parse(localStorage.getItem("chessAnalyzerLibrary")) || [];
+let savedGames = JSON.parse(localStorage.getItem("chessAnalyzerLibrary")) || [];
 let userSettings = JSON.parse(
   localStorage.getItem("chessAnalyzerSettings"),
 ) || {
@@ -74,10 +73,19 @@ let isSparringMode = false;
 let isQuizMode = false;
 let mistakeIndices = [];
 let currentBestMoveUCI = null;
+/** Lesson mode */
+let activeLesson = null;
 /** Auto-Analyze state */
 let isAutoAnalyzing = false;
 let autoAnalyzeIndex = 0;
 let autoAnalyzeEvals = [];
+let autoAnalyzeBestMoves = [];
+/** Chess Clock state */
+let whiteTime = 600;
+let blackTime = 600;
+let timeIncrement = 0;
+let timerInterval = null;
+let activeColor = "w";
 
 $(document).ready(function () {
   initEngine(handleEngineMessage);
@@ -123,6 +131,12 @@ $(document).ready(function () {
   // Clickable move list: jump to any move
   $(".move-list-body").on("click", ".move-white, .move-black", function () {
     const idx = parseInt($(this).attr("data-move-index"), 10);
+    if (!isNaN(idx)) jumpToMove(idx);
+  });
+
+  // Key Moments: jump to move from scorecard review
+  window.addEventListener("jumpToMove", function (e) {
+    const idx = e.detail;
     if (!isNaN(idx)) jumpToMove(idx);
   });
 
@@ -178,7 +192,11 @@ $(document).ready(function () {
     clearLastMoveHighlight();
     syncMaterial();
     updateEvalBar(0);
-    updateCoach("Position Loaded", "Make a move or enable Sparring Mode to play vs Stockfish.", "neutral");
+    updateCoach(
+      "Position Loaded",
+      "Make a move or enable Sparring Mode to play vs Stockfish.",
+      "neutral",
+    );
     currentEnginePV = "Calculating...";
     updateAnalysisView(currentEngineScore, currentEngineDepth, currentEnginePV);
     analyzePosition(game.fen(), userSettings.engineDepth);
@@ -190,7 +208,17 @@ $(document).ready(function () {
       const level = parseInt($("#sparring-level").val());
       setEngineSkillLevel(level);
       $("#sparring-level").show();
+      $("#btnResignReview").show();
       $(this).text("Stop Training").css("background", "#b33430");
+
+      // Initialize clocks from time control selector
+      const timeSettings = $("#time-control-select").val().split(",");
+      whiteTime = parseInt(timeSettings[0]);
+      blackTime = parseInt(timeSettings[0]);
+      timeIncrement = parseInt(timeSettings[1]);
+      activeColor = "w";
+      updateTimerUI();
+
       updateCoach(
         "Sparring Mode",
         `Play a move! Stockfish (Level ${level}) will reply automatically.`,
@@ -199,6 +227,8 @@ $(document).ready(function () {
     } else {
       setEngineSkillLevel(20);
       $("#sparring-level").hide();
+      $("#btnResignReview").hide();
+      stopClocks();
       $(this).text("Train vs AI").css("background", "var(--accent-green)");
       updateCoach("Sparring Mode", "Sparring mode disabled.", "neutral");
     }
@@ -218,26 +248,23 @@ $(document).ready(function () {
 
   // --- Full Game Auto-Analyzer ---
   $("#btnRunFullAnalysis").on("click", function () {
-    if (moves.length === 0) {
-      updateCoach(
-        "No game loaded",
-        "Load a PGN game first before running analysis.",
-        "bad",
-      );
-      return;
-    }
+    if (moves.length === 0) return;
     isAutoAnalyzing = true;
     autoAnalyzeIndex = 0;
-    autoAnalyzeEvals = [0.0];
+    autoAnalyzeEvals = [0.2]; // Standard starting position evaluation
+    autoAnalyzeBestMoves = ["e2e4"]; // Standard best opening move
     moveClassifications = new Array(moves.length).fill(null);
 
     $("#auto-analyze-prompt").hide();
     $("#scorecard-container")
       .show()
       .html(
-        '<div style="text-align: center; padding: 20px; color: var(--accent-green); font-weight: bold;">Analyzing Game: <span id="analyze-progress">0</span>%</div>',
+        '<div style="text-align: center; padding: 20px; color: var(--accent-green); font-weight: bold;">Analyzing Game (Depth ' +
+          userSettings.engineDepth +
+          '): <span id="analyze-progress">0</span>%</div>',
       );
 
+    // Reset board and start loop WITHOUT analyzing the start position again
     game.reset();
     analyzeNextMoveInLoop();
   });
@@ -246,7 +273,10 @@ $(document).ready(function () {
   $("#btnReviewMistakes").on("click", function () {
     if (mistakeIndices.length === 0) return;
     isQuizMode = true;
-    $("#variation-banner").css("display", "flex").find("span").text("🧠 Mistake Review Mode");
+    $("#variation-banner")
+      .css("display", "flex")
+      .find("span")
+      .text("🧠 Mistake Review Mode");
     $("#btnExitVariation").text("Exit Review");
     loadNextMistake();
   });
@@ -297,10 +327,7 @@ $(document).ready(function () {
       clearArrows("engine");
     }
 
-    localStorage.setItem(
-      "chessAnalyzerSettings",
-      JSON.stringify(userSettings),
-    );
+    localStorage.setItem("chessAnalyzerSettings", JSON.stringify(userSettings));
   }
 
   applySettings();
@@ -413,29 +440,50 @@ $(document).ready(function () {
       });
   });
 
+  // --- Resign & Game Over Modal ---
+  $("#btnResignReview").on("click", function () {
+    $("#game-over-title").text("You Resigned");
+    $("#game-over-modal").fadeIn(150).css("display", "flex");
+  });
+
+  $("#btnModalReview").on("click", function () {
+    $("#game-over-modal").fadeOut(150);
+
+    // 1. Turn off sparring safely
+    if (isSparringMode) {
+      isSparringMode = false;
+      setEngineSkillLevel(20);
+      $("#sparring-level, #btnResignReview").hide();
+      $("#btnSparringMode")
+        .text("Train vs AI")
+        .css("background", "var(--accent-green)");
+    }
+
+    // 2. Teleport to Analysis UI
+    $(".nav-item[title='Analyze']").click();
+
+    // 3. Open the Review Tab
+    $(".tab-btn[data-target='tab-review']").click();
+
+    // 4. Trigger the Auto-Analyzer!
+    $("#btnRunFullAnalysis").click();
+  });
+
+  $("#btnModalClose").on("click", function () {
+    $("#game-over-modal").fadeOut(150);
+  });
+
   // --- Sidebar Navigation (SPA Router) ---
 
   $(".nav-item[title='Analyze']").on("click", function () {
     $(".nav-item").removeClass("active");
     $(this).addClass("active");
-
-    $(".training-header").hide();
-    $("#toggle-setup").show();
-
-    // Safety: Turn off sparring mode if leaving the Train tab
-    if (isSparringMode) {
-      $("#btnSparringMode").click();
-    }
-
-    // Reset board to a clean analysis state
-    game.reset();
-    board.position("start");
-    moves = [];
-    currentMoveIndex = 0;
-    renderMoveList(moves);
-    clearArrows("engine");
-    clearArrows("user");
-    updateEvalBar(0);
+    $(".training-header, #learning-hub").hide();
+    $("#toggle-setup, #move-list-container").show();
+    if (isSparringMode) $("#btnSparringMode").click();
+    activeLesson = null;
+    stopClocks();
+    jumpToStart();
     $(".tab-btn[data-target='tab-coach']").click();
     updateCoach(
       "Analysis Mode 🎯",
@@ -447,28 +495,127 @@ $(document).ready(function () {
   $(".nav-item[title='Train']").on("click", function () {
     $(".nav-item").removeClass("active");
     $(this).addClass("active");
-
     $(".training-header").css("display", "flex");
-    $("#toggle-setup").hide();
+    $("#learning-hub, #toggle-setup").hide();
+    $("#move-list-container").show();
     hideSetupMenu();
-
-    // Reset board to standard training state
-    game.reset();
-    board.position("start");
+    activeLesson = null;
+    jumpToStart();
     $("#scenario-select").val("start");
-    moves = [];
-    currentMoveIndex = 0;
-    renderMoveList(moves);
-    clearArrows("engine");
-    clearArrows("user");
-    updateEvalBar(0);
     $(".tab-btn[data-target='tab-coach']").click();
     updateCoach(
       "Training Hub ⚔️",
-      "Select an endgame scenario above, or click 'Train vs AI' to spar from the starting position.",
+      "Select a scenario above, or click 'Train vs AI' to spar.",
       "neutral",
     );
   });
+
+  $(".nav-item[title='Learn']").on("click", function () {
+    $(".nav-item").removeClass("active");
+    $(this).addClass("active");
+    $(".training-header, #toggle-setup, #move-list-container").hide();
+    $("#learning-hub").show();
+    hideSetupMenu();
+    if (isSparringMode) $("#btnSparringMode").click();
+    activeLesson = null;
+
+    game.reset();
+    board.position("start");
+    renderLessons();
+    $(".tab-btn[data-target='tab-coach']").click();
+    updateCoach(
+      "Welcome to the Academy 🎓",
+      "Select a lesson below to master chess fundamentals and tactics.",
+      "neutral",
+    );
+  });
+
+  // --- Lesson Database & Framework ---
+  const lessons = [
+    {
+      id: 1,
+      title: "1. The Back Rank Mate",
+      desc: "Trap the King behind his own pawns.",
+      fen: "6k1/5ppp/8/8/8/8/8/4R1K1 w - - 0 1",
+      correctMove: "e1e8",
+      successMsg:
+        "Perfect! The pawns trap the king, and your rook delivers checkmate.",
+    },
+    {
+      id: 2,
+      title: "2. The Knight Fork",
+      desc: "Attack two valuable pieces at the exact same time.",
+      fen: "4q1k1/8/8/8/4N3/8/8/4K3 w - - 0 1",
+      correctMove: "e4f6",
+      successMsg:
+        "Excellent! The Knight checks the King and attacks the Queen simultaneously. You win the Queen!",
+    },
+    {
+      id: 3,
+      title: "3. The Absolute Pin",
+      desc: "Use your Rook to trap the Black Queen. She cannot move because the King is behind her!",
+      fen: "4k3/4q3/8/8/8/8/8/7R w - - 0 1",
+      correctMove: "h1e1",
+      successMsg:
+        "Brilliant! The Queen is pinned to the King. She is paralyzed and you will win her next turn.",
+    },
+    {
+      id: 4,
+      title: "4. The Skewer",
+      desc: "An X-Ray attack! Check the King, and when he moves out of the way, take the Queen behind him.",
+      fen: "4q3/8/8/4k3/8/8/8/7R w - - 0 1",
+      correctMove: "h1e1",
+      successMsg:
+        "Ouch! The King is forced to step aside, leaving the Queen completely undefended.",
+    },
+    {
+      id: 5,
+      title: "5. Smothered Mate",
+      desc: "The enemy King is completely trapped by his own pieces. Deliver the final blow with your Knight.",
+      fen: "6rk/6pp/8/6N1/8/8/8/7K w - - 0 1",
+      correctMove: "g5f7",
+      successMsg:
+        "Checkmate! A beautiful smothered mate. The King has nowhere to run.",
+    },
+  ];
+
+  function renderLessons() {
+    const list = $("#lesson-list");
+    list.empty();
+    lessons.forEach((l) => {
+      list.append(`
+        <div class="lesson-card" data-id="${l.id}" style="background: var(--bg-panel-alt); padding: 12px; border-radius: var(--radius-sm); cursor: pointer; border: 1px solid var(--border-color); transition: 0.2s;">
+            <div style="font-weight: 700; color: var(--accent-gold); font-size: 13px; margin-bottom: 4px;">${l.title}</div>
+            <div style="font-size: 12px; color: var(--text-secondary);">${l.desc}</div>
+        </div>
+      `);
+    });
+  }
+
+  $("#learning-hub").on("click", ".lesson-card", function () {
+    const id = $(this).data("id");
+    activeLesson = lessons.find((l) => l.id === id);
+
+    game.load(activeLesson.fen);
+    board.position(game.fen(), false);
+    clearArrows("engine");
+    clearArrows("user");
+    clearSuggestedMoveHighlight();
+
+    updateCoach(
+      "Lesson Active: " + activeLesson.title,
+      "Find the winning move! Drag the correct piece.",
+      "neutral",
+    );
+  });
+
+  $("#learning-hub")
+    .on("mouseenter", ".lesson-card", function () {
+      $(this).css("background", "var(--bg-surface)");
+    })
+    .on("mouseleave", ".lesson-card", function () {
+      $(this).css("background", "var(--bg-panel-alt)");
+    });
 
   // --- Library Modal ---
   $(".nav-item[title='Library']").on("click", function () {
@@ -665,21 +812,52 @@ function onDrop(source, target) {
   // Quiz Mode intercept — check the guess without modifying the game
   if (isQuizMode) {
     const uciMove = source + target;
-    if (uciMove === currentBestMoveUCI || uciMove + "q" === currentBestMoveUCI) {
+    if (
+      uciMove === currentBestMoveUCI ||
+      uciMove + "q" === currentBestMoveUCI
+    ) {
       playFeedback("move");
       updateCoach("Brilliant! ⭐", "You found the best move!", "good");
       setTimeout(loadNextMistake, 2000);
     } else {
       playFeedback("blunder");
-      updateCoach("Not quite ❌", "That wasn't the best move. Keep looking!", "bad");
+      updateCoach(
+        "Not quite ❌",
+        "That wasn't the best move. Keep looking!",
+        "bad",
+      );
     }
     return "snapback";
   }
 
+  // Lesson Mode intercept
+  if (activeLesson) {
+    const uciMove = source + target;
+    if (
+      uciMove === activeLesson.correctMove ||
+      uciMove + "q" === activeLesson.correctMove
+    ) {
+      playFeedback("move");
+      updateCoach("Great Job! ⭐", activeLesson.successMsg, "good");
+      game.move({ from: source, to: target, promotion: "q" });
+      setTimeout(() => board.position(game.fen(), false), 250);
+      activeLesson = null;
+      return "snapback";
+    } else {
+      playFeedback("blunder");
+      updateCoach(
+        "Not quite ❌",
+        "Try again! Look closely at the tactic.",
+        "bad",
+      );
+      return "snapback";
+    }
+  }
+
   let moveObj = game.move({ from: source, to: target, promotion: "q" });
   if (moveObj === null) return "snapback";
-  if (moveObj.captured) playFeedback('capture');
-  else playFeedback('move');
+  if (moveObj.captured) playFeedback("capture");
+  else playFeedback("move");
 
   // First branch: save originals and show banner
   if (!isVariation) {
@@ -715,6 +893,17 @@ function onDrop(source, target) {
   currentEnginePV = "Calculating...";
   updateAnalysisView(currentEngineScore, currentEngineDepth, currentEnginePV);
   analyzePosition(game.fen(), userSettings.engineDepth);
+
+  // Clock: add increment for the player who just moved, switch, start on first move
+  if (isSparringMode) {
+    if (activeColor === "w") whiteTime += timeIncrement;
+    else blackTime += timeIncrement;
+    activeColor = "b";
+    if (game.history().length === 1) startClocks();
+    updateTimerUI();
+  }
+
+  checkGameOver();
 }
 
 function onSnapEnd() {
@@ -845,8 +1034,8 @@ function nextMove() {
   if (isSelectedPlayerMove) {
     const savedFen = game.fen();
     const moveObj = game.move(move.san);
-    if (moveObj && moveObj.captured) playFeedback('capture');
-    else playFeedback('move');
+    if (moveObj && moveObj.captured) playFeedback("capture");
+    else playFeedback("move");
     board.position(game.fen(), true);
     currentMoveIndex++;
     highlightLastMove(move.from, move.to);
@@ -862,8 +1051,8 @@ function nextMove() {
   }
 
   const moveObj = game.move(move.san);
-  if (moveObj && moveObj.captured) playFeedback('capture');
-  else playFeedback('move');
+  if (moveObj && moveObj.captured) playFeedback("capture");
+  else playFeedback("move");
   board.position(game.fen(), true);
   currentMoveIndex++;
   highlightLastMove(move.from, move.to);
@@ -884,7 +1073,7 @@ function prevMove() {
   storedSelectedPlayerBestMove = null;
   if (currentMoveIndex > 0) {
     game.undo();
-    playFeedback('move');
+    playFeedback("move");
     board.position(game.fen(), true);
     currentMoveIndex--;
     highlightActiveMove(currentMoveIndex - 1);
@@ -934,8 +1123,8 @@ function jumpToMove(targetIndex) {
   // Sync clocks and trigger engine analysis
   syncClocks(targetIndex);
   syncMaterial();
-  if (lastMove && lastMove.captured) playFeedback('capture');
-  else playFeedback('move');
+  if (lastMove && lastMove.captured) playFeedback("capture");
+  else playFeedback("move");
   updateCoach("Thinking...", "Analyzing this position...", "neutral");
   analyzePosition(game.fen(), userSettings.engineDepth);
 }
@@ -972,7 +1161,7 @@ function flipBoard() {
 /** Calculate material totals from the current board position. */
 function calculateMaterial() {
   const pieceValues = { p: 1, n: 3, b: 3, r: 5, q: 9 };
-  const pieceOrder = ['q', 'r', 'b', 'n', 'p'];
+  const pieceOrder = ["q", "r", "b", "n", "p"];
   const startingPieces = { p: 8, n: 2, b: 2, r: 2, q: 1 };
 
   // Count current pieces on the board
@@ -1021,7 +1210,11 @@ function calculateMaterial() {
 function syncMaterial() {
   const mat = calculateMaterial();
   updateMaterial(mat.whiteAdvantage, mat.blackAdvantage, analyzeForColor);
-  updateCapturedPieces(mat.capturedByWhite, mat.capturedByBlack, analyzeForColor);
+  updateCapturedPieces(
+    mat.capturedByWhite,
+    mat.capturedByBlack,
+    analyzeForColor,
+  );
   syncOpeningName();
 }
 
@@ -1175,6 +1368,7 @@ function handleEngineMessage(msg) {
     // Auto-Analyze intercept: capture eval and advance the loop
     if (isAutoAnalyzing) {
       autoAnalyzeEvals.push(currentEval);
+      autoAnalyzeBestMoves.push(bestEngineMove);
       let progress = Math.round((autoAnalyzeIndex / moves.length) * 100);
       $("#analyze-progress").text(progress);
       autoAnalyzeIndex++;
@@ -1223,7 +1417,11 @@ function handleEngineMessage(msg) {
     generateScorecard();
 
     // --- Sparring Mode: AI auto-play ---
-    if (isSparringMode && !game.game_over() && game.turn() !== board.orientation().charAt(0)) {
+    if (
+      isSparringMode &&
+      !game.game_over() &&
+      game.turn() !== board.orientation().charAt(0)
+    ) {
       setTimeout(() => {
         const from = bestEngineMove.substring(0, 2);
         const to = bestEngineMove.substring(2, 4);
@@ -1239,14 +1437,106 @@ function handleEngineMessage(msg) {
           highlightActiveMove(currentMoveIndex - 1);
           syncMaterial();
           playFeedback(aiMove.captured ? "capture" : "move");
-          updateCoach("Your Turn", "Stockfish played. Make your move!", "neutral");
+          updateCoach(
+            "Your Turn",
+            "Stockfish played. Make your move!",
+            "neutral",
+          );
           currentEnginePV = "Calculating...";
-          updateAnalysisView(currentEngineScore, currentEngineDepth, currentEnginePV);
+          updateAnalysisView(
+            currentEngineScore,
+            currentEngineDepth,
+            currentEnginePV,
+          );
           analyzePosition(game.fen(), userSettings.engineDepth);
+
+          // Clock: add increment for AI, switch back to player
+          if (isSparringMode) {
+            blackTime += timeIncrement;
+            activeColor = "w";
+            updateTimerUI();
+          }
+
+          checkGameOver();
         }
       }, 500);
     }
   }
+}
+
+/** Check if the game has ended and show the game-over modal. */
+function checkGameOver() {
+  if (game.game_over()) {
+    let reason = "Game Over";
+    if (game.in_checkmate()) reason = "Checkmate!";
+    else if (game.in_stalemate()) reason = "Stalemate";
+    else if (game.in_threefold_repetition()) reason = "Draw by Repetition";
+    else if (game.insufficient_material()) reason = "Draw by Insufficient Material";
+
+    $("#game-over-title").text(reason);
+    $("#game-over-modal").fadeIn(150).css("display", "flex");
+  }
+}
+
+/** Format seconds into m:ss or m:ss.t for bullet time. */
+function formatTime(seconds) {
+  if (seconds < 0) seconds = 0;
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  if (seconds < 20 && seconds > 0) {
+    const tenths = Math.floor((seconds % 1) * 10);
+    return `${m}:${s < 10 ? "0" : ""}${s}.${tenths}`;
+  }
+  return `${m}:${s < 10 ? "0" : ""}${s}`;
+}
+
+/** Update the timer display and apply visual state classes. */
+function updateTimerUI() {
+  $("#timer-white").text(formatTime(whiteTime));
+  $("#timer-black").text(formatTime(blackTime));
+
+  $("#timer-white").toggleClass(
+    "timer-active",
+    activeColor === "w" && timerInterval !== null,
+  );
+  $("#timer-black").toggleClass(
+    "timer-active",
+    activeColor === "b" && timerInterval !== null,
+  );
+
+  $("#timer-white").toggleClass("timer-low", whiteTime <= 30);
+  $("#timer-black").toggleClass("timer-low", blackTime <= 30);
+}
+
+/** Stop the chess clock. */
+function stopClocks() {
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = null;
+  updateTimerUI();
+}
+
+/** Start the chess clock with 100ms tick for smooth bullet rendering. */
+function startClocks() {
+  stopClocks();
+  timerInterval = setInterval(() => {
+    if (activeColor === "w") {
+      whiteTime -= 0.1;
+      if (whiteTime <= 0) handleTimeout("White");
+    } else {
+      blackTime -= 0.1;
+      if (blackTime <= 0) handleTimeout("Black");
+    }
+    updateTimerUI();
+  }, 100);
+}
+
+/** Handle a player running out of time. */
+function handleTimeout(color) {
+  stopClocks();
+  $("#game-over-title").text(
+    `Timeout! ${color === "White" ? "Black" : "White"} wins.`,
+  );
+  $("#game-over-modal").fadeIn(150).css("display", "flex");
 }
 
 function generateAdvice(current, previous, bestEngineMove) {
@@ -1321,7 +1611,7 @@ function generateAdvice(current, previous, bestEngineMove) {
   if (classification) {
     moveClassifications[moveIndex] = classification;
     addMoveClassificationIcon(moveIndex, classification);
-    if (classification === 'blunder') playFeedback('blunder');
+    if (classification === "blunder") playFeedback("blunder");
   }
 
   updateCoach(title, text, sentiment);
@@ -1329,7 +1619,13 @@ function generateAdvice(current, previous, bestEngineMove) {
 
 /** Tally move classifications and render the scorecard. */
 function generateScorecard() {
-  const accScores = { best: 100, good: 85, inaccuracy: 50, mistake: 20, blunder: 0 };
+  const accScores = {
+    best: 100,
+    good: 85,
+    inaccuracy: 50,
+    mistake: 20,
+    blunder: 0,
+  };
   let whiteCounts = {};
   let blackCounts = {};
   let whiteScoreSum = 0;
@@ -1358,10 +1654,53 @@ function generateScorecard() {
     }
   }
 
-  const whiteAcc = whiteScoreCount > 0 ? Math.round(whiteScoreSum / whiteScoreCount) : "--";
-  const blackAcc = blackScoreCount > 0 ? Math.round(blackScoreSum / blackScoreCount) : "--";
+  const whiteAcc =
+    whiteScoreCount > 0 ? Math.round(whiteScoreSum / whiteScoreCount) : "--";
+  const blackAcc =
+    blackScoreCount > 0 ? Math.round(blackScoreSum / blackScoreCount) : "--";
 
   renderScorecard(whiteCounts, blackCounts, whiteAcc, blackAcc);
+
+  // Append "Key Moments" with best move suggestions for sub-optimal moves
+  let momentsHtml = "";
+  for (let i = 0; i < moveClassifications.length; i++) {
+    const cls = moveClassifications[i];
+    if (cls === "blunder" || cls === "mistake" || cls === "inaccuracy") {
+      const moveNum = Math.floor(i / 2) + 1;
+      const side = i % 2 === 0 ? "White" : "Black";
+      const san = moves[i] ? moves[i].san : "?";
+      const uci = autoAnalyzeBestMoves[i];
+      let suggestionText = "";
+      if (uci && uci.length >= 4) {
+        suggestionText = uci.substring(0, 2) + " \u2192 " + uci.substring(2, 4);
+      }
+
+      const iconMap = {
+        blunder: '<span class="move-icon icon-blunder">\u2716</span>',
+        mistake: '<span class="move-icon icon-mistake">\u2047</span>',
+        inaccuracy: '<span class="move-icon icon-inaccuracy">\u2048</span>',
+      };
+
+      momentsHtml += `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--bg-panel-alt); border-radius: 4px; margin-bottom: 6px; cursor: pointer;" onclick="window.dispatchEvent(new CustomEvent('jumpToMove', {detail: ${i}}))">
+          <div>
+            ${iconMap[cls]} <span style="color: #fff; font-weight: 600;">${moveNum}. ${san}</span>
+            <span style="color: var(--text-muted); font-size: 11px; margin-left: 4px;">(${side})</span>
+          </div>
+          ${suggestionText ? `<div style="font-size: 11px; color: var(--accent-green); font-weight: bold;">\ud83d\udca1 Try: ${suggestionText}</div>` : ""}
+        </div>
+      `;
+    }
+  }
+
+  if (momentsHtml) {
+    $("#scorecard-container").append(`
+      <div style="margin-top: 15px; padding-top: 12px; border-top: 1px solid var(--border-color);">
+        <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; font-weight: 700;">Key Moments</div>
+        ${momentsHtml}
+      </div>
+    `);
+  }
 
   // Populate mistake indices for Quiz Mode
   mistakeIndices = [];
@@ -1395,7 +1734,11 @@ function loadNextMistake() {
     $("#variation-banner").hide();
     $("#variation-banner").find("span").text("🔀 Exploring Variation");
     $("#btnExitVariation").text("Return to Game");
-    updateCoach("Review Complete! 🎉", "You have reviewed all your mistakes. Great work!", "good");
+    updateCoach(
+      "Review Complete! 🎉",
+      "You have reviewed all your mistakes. Great work!",
+      "good",
+    );
     return;
   }
 
@@ -1440,22 +1783,34 @@ function renderLibrary() {
   });
 }
 
-/** Auto-analyze loop: feed positions one at a time and collect evals. */
+/** Safely convert engine eval strings (+1.5, M3, -M2) into usable math floats. */
+function parseEvalToNumber(evalStr) {
+  if (evalStr === undefined || evalStr === null) return 0;
+  let str = evalStr.toString();
+  if (str.includes("M")) {
+    return str.includes("-") ? -99.0 : 99.0;
+  }
+  return parseFloat(str) || 0;
+}
+
+/** Auto-analyze loop: make move, evaluate, collect, repeat. */
 function analyzeNextMoveInLoop() {
-  if (autoAnalyzeIndex > moves.length) {
+  // 1. Check if we have analyzed all moves
+  if (autoAnalyzeIndex >= moves.length) {
     isAutoAnalyzing = false;
 
-    // Loop finished — classify all moves from collected evals
+    // 2. Loop finished — classify all moves using parsed numbers
     for (let i = 0; i < moves.length; i++) {
-      let prev = autoAnalyzeEvals[i];
-      let curr = autoAnalyzeEvals[i + 1];
+      let prev = parseEvalToNumber(autoAnalyzeEvals[i]);
+      let curr = parseEvalToNumber(autoAnalyzeEvals[i + 1]);
+
       let isWhiteMove = i % 2 === 0;
       let delta = isWhiteMove ? curr - prev : prev - curr;
 
-      if (delta < -2.0) moveClassifications[i] = "blunder";
-      else if (delta < -0.8) moveClassifications[i] = "mistake";
-      else if (delta < -0.3) moveClassifications[i] = "inaccuracy";
-      else if (delta > 0.8) moveClassifications[i] = "good";
+      if (delta <= -2.0) moveClassifications[i] = "blunder";
+      else if (delta <= -0.8) moveClassifications[i] = "mistake";
+      else if (delta <= -0.3) moveClassifications[i] = "inaccuracy";
+      else if (delta >= 0.5) moveClassifications[i] = "good";
       else moveClassifications[i] = "best";
 
       addMoveClassificationIcon(i, moveClassifications[i]);
@@ -1471,11 +1826,7 @@ function analyzeNextMoveInLoop() {
     return;
   }
 
-  // Apply the next move (index 0 evaluates the starting position)
-  if (autoAnalyzeIndex > 0) {
-    game.move(moves[autoAnalyzeIndex - 1].san);
-  }
-
-  // Request shallow depth (10) for fast batch analysis
-  analyzePosition(game.fen(), 10);
+  // 3. Make the move FIRST, then ask the engine to analyze the resulting board
+  game.move(moves[autoAnalyzeIndex].san);
+  analyzePosition(game.fen(), userSettings.engineDepth);
 }
