@@ -86,6 +86,8 @@ let blackTime = 600;
 let timeIncrement = 0;
 let timerInterval = null;
 let activeColor = "w";
+/** Premove state */
+let pendingPremove = null;
 
 $(document).ready(function () {
   initEngine(handleEngineMessage);
@@ -94,7 +96,7 @@ $(document).ready(function () {
     position: "start",
     draggable: true,
     pieceTheme:
-      "https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png",
+      "https://lichess1.org/assets/piece/alpha/{piece}.svg",
     moveSpeed: 500,
     appearSpeed: 500,
     onDragStart: onDragStart,
@@ -722,6 +724,8 @@ $(document).ready(function () {
         }
       } else if (e.button === 0 || e.which === 1) {
         clearArrows("user");
+        clearLegalHints();
+        clearPremove();
       }
     },
     { capture: true },
@@ -799,16 +803,66 @@ $(function () {
 // --- DRAG & DROP (Free Play) ---
 
 function onDragStart(source, piece, position, orientation) {
+  clearLegalHints();
   if (game.game_over()) return false;
+
+  // Always allow picking up your own pieces (for premoves in sparring)
+  const isOwnPiece =
+    (piece.search(/^w/) !== -1 && board.orientation() === "white") ||
+    (piece.search(/^b/) !== -1 && board.orientation() === "black");
+
+  // Block picking up opponent's pieces
   if (
     (game.turn() === "w" && piece.search(/^b/) !== -1) ||
     (game.turn() === "b" && piece.search(/^w/) !== -1)
   ) {
     return false;
   }
+
+  // If it's not our turn but we're sparring, allow drag for premove (no hints)
+  if (isSparringMode && isOwnPiece && game.turn() !== board.orientation().charAt(0)) {
+    return; // Allow drag but skip legal hints
+  }
+
+  // Show legal move hints
+  const legalMoves = game.moves({ square: source, verbose: true });
+  if (legalMoves.length === 0) return;
+
+  legalMoves.forEach((move) => {
+    const squareEl = $("#board .square-" + move.to);
+    if (game.get(move.to)) {
+      squareEl.addClass("legal-hint-capture");
+    } else {
+      squareEl.addClass("legal-hint-dot");
+    }
+  });
+}
+
+/** Remove all legal move hint indicators from the board. */
+function clearLegalHints() {
+  $("#board .square-55d63").removeClass("legal-hint-dot legal-hint-capture");
+}
+
+/** Clear any queued premove and remove highlights. */
+function clearPremove() {
+  pendingPremove = null;
+  $(".premove-highlight").removeClass("premove-highlight");
 }
 
 function onDrop(source, target) {
+  clearLegalHints();
+
+  // Premove: if it's the AI's turn during sparring, queue the move
+  if (isSparringMode && game.turn() !== board.orientation().charAt(0)) {
+    clearPremove();
+    pendingPremove = { from: source, to: target };
+    $("#board .square-" + source).addClass("premove-highlight");
+    $("#board .square-" + target).addClass("premove-highlight");
+    return "snapback";
+  }
+
+  clearPremove();
+
   // Quiz Mode intercept — check the guess without modifying the game
   if (isQuizMode) {
     const uciMove = source + target;
@@ -907,6 +961,7 @@ function onDrop(source, target) {
 }
 
 function onSnapEnd() {
+  clearLegalHints();
   board.position(game.fen(), false);
 }
 
@@ -1458,6 +1513,40 @@ function handleEngineMessage(msg) {
           }
 
           checkGameOver();
+
+          // Execute queued premove
+          if (pendingPremove) {
+            const moveAttempt = game.move({
+              from: pendingPremove.from,
+              to: pendingPremove.to,
+              promotion: "q",
+            });
+
+            if (moveAttempt) {
+              moves = moves.slice(0, currentMoveIndex);
+              moves.push(moveAttempt);
+              currentMoveIndex++;
+              board.position(game.fen());
+              highlightLastMove(pendingPremove.from, pendingPremove.to);
+              renderMoveList(moves);
+              highlightActiveMove(currentMoveIndex - 1);
+              syncMaterial();
+              playFeedback(moveAttempt.captured ? "capture" : "move");
+
+              // Clock: add increment for player, switch to AI
+              if (isSparringMode) {
+                if (activeColor === "w") whiteTime += timeIncrement;
+                else blackTime += timeIncrement;
+                activeColor = activeColor === "w" ? "b" : "w";
+                updateTimerUI();
+              }
+
+              analyzePosition(game.fen(), userSettings.engineDepth);
+              checkGameOver();
+            }
+
+            clearPremove();
+          }
         }
       }, 500);
     }
