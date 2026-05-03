@@ -95,8 +95,7 @@ $(document).ready(function () {
   board = Chessboard("board", {
     position: "start",
     draggable: true,
-    pieceTheme:
-      "https://lichess1.org/assets/piece/alpha/{piece}.svg",
+    pieceTheme: "https://lichess1.org/assets/piece/cburnett/{piece}.svg",
     moveSpeed: 500,
     appearSpeed: 500,
     onDragStart: onDragStart,
@@ -105,6 +104,11 @@ $(document).ready(function () {
   });
 
   $(window).resize(board.resize);
+  $(".nav-item[title='Review']").on("click", function () {
+    $(".nav-item").removeClass("active");
+    $(this).addClass("active");
+    $(".tab-btn[data-target='tab-review']").click(); // Opens the right-hand tab
+  });
   $("#btnFirst").on("click", function () {
     jumpToStart();
   });
@@ -779,6 +783,22 @@ $(document).ready(function () {
   $(window).resize(function () {
     clearArrows();
   });
+
+  // --- Theme Toggle Logic ---
+  const currentTheme = localStorage.getItem("chessAnalyzerTheme") || "midnight";
+  if (currentTheme === "ivory") {
+    document.body.setAttribute("data-theme", "light");
+  }
+
+  $("#btnThemeToggle").on("click", function () {
+    if (document.body.getAttribute("data-theme") === "light") {
+      document.body.removeAttribute("data-theme");
+      localStorage.setItem("chessAnalyzerTheme", "midnight");
+    } else {
+      document.body.setAttribute("data-theme", "light");
+      localStorage.setItem("chessAnalyzerTheme", "ivory");
+    }
+  });
 });
 
 // --- TOUCH SWIPE GESTURES ---
@@ -820,7 +840,11 @@ function onDragStart(source, piece, position, orientation) {
   }
 
   // If it's not our turn but we're sparring, allow drag for premove (no hints)
-  if (isSparringMode && isOwnPiece && game.turn() !== board.orientation().charAt(0)) {
+  if (
+    isSparringMode &&
+    isOwnPiece &&
+    game.turn() !== board.orientation().charAt(0)
+  ) {
     return; // Allow drag but skip legal hints
   }
 
@@ -1560,7 +1584,8 @@ function checkGameOver() {
     if (game.in_checkmate()) reason = "Checkmate!";
     else if (game.in_stalemate()) reason = "Stalemate";
     else if (game.in_threefold_repetition()) reason = "Draw by Repetition";
-    else if (game.insufficient_material()) reason = "Draw by Insufficient Material";
+    else if (game.insufficient_material())
+      reason = "Draw by Insufficient Material";
 
     $("#game-over-title").text(reason);
     $("#game-over-modal").fadeIn(150).css("display", "flex");

@@ -31,13 +31,84 @@
     <div id="app-wrapper">
 
         <nav class="app-sidebar">
-            <div class="sidebar-logo">♞</div>
+            <!-- Logo -->
+            <div class="sidebar-logo">
+                <!-- The Dark Theme Logo (Default Midnight) -->
+                <img src="/assets/logo-dark.svg" alt="Chess Analyzer" class="theme-logo logo-dark">
+
+                <!-- The Light Theme Logo (Ivory) -->
+                <img src="/assets/logo-light.svg" alt="Chess Analyzer" class="theme-logo logo-light">
+            </div>
             <div class="sidebar-menu">
-                <button class="nav-item active" title="Analyze">🎯</button>
-                <button class="nav-item" title="Train">⚔️</button>
-                <button class="nav-item" title="Learn">🎓</button>
-                <button class="nav-item" title="Library">📚</button>
-                <button class="nav-item" title="Settings">⚙️</button>
+                <!-- Home / Dashboard -->
+                <button class="nav-item active" title="Analyze">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                        <polyline points="9 22 9 12 15 12 15 22" />
+                    </svg>
+                </button>
+
+                <!-- Train / Puzzle -->
+                <button class="nav-item" title="Train">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path
+                            d="M19.439 7.85c-.049.322.059.648.289.878l1.568 1.568c.47.47.706 1.087.706 1.704s-.235 1.233-.706 1.704l-1.611 1.611a.98.98 0 0 1-.837.276c-.47-.07-.802-.48-.968-.925a2.501 2.501 0 1 0-3.214 3.214c.446.166.855.497.925.968a.979.979 0 0 1-.276.837l-1.61 1.611c-.94.94-2.469.94-3.408 0L8.73 19.73a.98.98 0 0 1-.276-.837c.07-.47.48-.802.925-.968a2.5 2.5 0 1 0-3.214-3.214c-.166-.446-.497-.855-.968-.925a.979.979 0 0 1-.837-.276L2.75 11.9a2.41 2.41 0 0 1 0-3.408l1.568-1.568a.98.98 0 0 1 .837-.276c.47.07.802.48.968.925a2.5 2.5 0 1 0 3.214-3.214c-.446-.166-.855-.497-.925-.968a.979.979 0 0 1 .276-.837L10.3 2.75c.94-.94 2.469-.94 3.408 0l1.611 1.61c.23.23.556.338.879.288z" />
+                    </svg>
+                </button>
+
+                <!-- Learn / Academy -->
+                <button class="nav-item" title="Learn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                        <path d="M6 12v5c3 3 9 3 12 0v-5" />
+                    </svg>
+                </button>
+
+                <!-- Analyze / Magnifying Glass -->
+                <button class="nav-item" title="Library">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8" />
+                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                        <path d="M11 8v4l3 3" />
+                    </svg>
+                </button>
+
+                <!-- Review / Stats Chart -->
+                <button class="nav-item" title="Review">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="18" y="3" width="4" height="18" />
+                        <rect x="10" y="8" width="4" height="13" />
+                        <rect x="2" y="13" width="4" height="8" />
+                    </svg>
+                </button>
+            </div>
+
+
+            <!-- Create a new group for the bottom buttons -->
+            <div
+                style="margin-top: auto; margin-bottom: 20px; display: flex; flex-direction: column; gap: 20px; width: 100%;">
+                <!-- Theme Toggle -->
+                <button id="btnThemeToggle" class="nav-item" title="Toggle Theme">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+                    </svg>
+                </button>
+
+                <!-- Settings -->
+                <button class="nav-item" title="Settings">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3" />
+                        <path
+                            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                    </svg>
+                </button>
             </div>
         </nav>
 
@@ -74,14 +145,18 @@
                                 </div>
                                 <div id="timer-black" class="player-timer">10:00</div>
                             </div>
-                            <div id="board-stack" style="position: relative; width: 100%;" oncontextmenu="return false;">
+                            <div id="board-stack" style="position: relative; width: 100%;"
+                                oncontextmenu="return false;">
                                 <div id="board"></div>
-                                <svg id="arrow-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10;">
+                                <svg id="arrow-overlay"
+                                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10;">
                                     <defs>
-                                        <marker id="arrowhead-engine" markerWidth="3" markerHeight="3" refX="2" refY="1.5" orient="auto">
+                                        <marker id="arrowhead-engine" markerWidth="3" markerHeight="3" refX="2"
+                                            refY="1.5" orient="auto">
                                             <polygon points="0 0, 3 1.5, 0 3" fill="var(--accent-green)" />
                                         </marker>
-                                        <marker id="arrowhead-user" markerWidth="3" markerHeight="3" refX="2" refY="1.5" orient="auto">
+                                        <marker id="arrowhead-user" markerWidth="3" markerHeight="3" refX="2" refY="1.5"
+                                            orient="auto">
                                             <polygon points="0 0, 3 1.5, 0 3" fill="var(--accent-gold)" />
                                         </marker>
                                     </defs>
@@ -107,32 +182,41 @@
                 <div class="side-panel">
 
                     <div class="training-header" style="display: none;">
-                        <select id="time-control-select" style="padding: 6px; background: var(--bg-panel); color: #fff; border: 1px solid var(--border-color); border-radius: 4px; font-size: 13px; margin-right: 5px;">
+                        <select id="time-control-select"
+                            style="padding: 6px; background: var(--bg-panel); color: #fff; border: 1px solid var(--border-color); border-radius: 4px; font-size: 13px; margin-right: 5px;">
                             <option value="60,0">Bullet (1|0)</option>
                             <option value="180,2">Blitz (3|2)</option>
                             <option value="300,5">Blitz (5|5)</option>
                             <option value="600,0" selected>Rapid (10|0)</option>
                         </select>
-                        <select id="scenario-select" style="flex: 1; padding: 6px; background: var(--bg-panel); color: #fff; border: 1px solid var(--border-color); border-radius: 4px; font-family: inherit; font-size: 13px;">
+                        <select id="scenario-select"
+                            style="flex: 1; padding: 6px; background: var(--bg-panel); color: #fff; border: 1px solid var(--border-color); border-radius: 4px; font-family: inherit; font-size: 13px;">
                             <option value="start">Standard Game</option>
                             <optgroup label="Openings">
-                                <option value="r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3">Ruy Lopez (Spanish)</option>
-                                <option value="r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3">Italian Game</option>
-                                <option value="rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2">Sicilian Defense</option>
+                                <option value="r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3">Ruy
+                                    Lopez (Spanish)</option>
+                                <option value="r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3">
+                                    Italian Game</option>
+                                <option value="rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2">Sicilian
+                                    Defense</option>
                             </optgroup>
                             <optgroup label="Endgames">
                                 <option value="8/8/8/8/8/2k5/8/R2K4 w - - 0 1">Rook &amp; King vs King</option>
                                 <option value="8/8/8/8/8/2k5/p7/2K5 w - - 0 1">Pawn Promotion Race</option>
                             </optgroup>
                         </select>
-                        <select id="sparring-level" style="padding: 6px; background: var(--bg-panel); color: #fff; border: 1px solid var(--border-color); border-radius: 4px; font-size: 13px; margin-right: 5px; display: none;">
+                        <select id="sparring-level"
+                            style="padding: 6px; background: var(--bg-panel); color: #fff; border: 1px solid var(--border-color); border-radius: 4px; font-size: 13px; margin-right: 5px; display: none;">
                             <option value="1">Beginner</option>
                             <option value="5">Intermediate</option>
                             <option value="10">Advanced</option>
                             <option value="20" selected>Grandmaster</option>
                         </select>
-                        <button id="btnSparringMode" style="background: var(--accent-green); color: white; border: none; border-radius: 4px; padding: 0 12px; cursor: pointer; font-weight: bold; font-size: 12px; white-space: nowrap;">Train vs AI</button>
-                        <button id="btnResignReview" style="background: #b33430; color: white; border: none; border-radius: 4px; padding: 0 12px; cursor: pointer; font-weight: bold; font-size: 12px; white-space: nowrap; display: none;">Resign</button>
+                        <button id="btnSparringMode"
+                            style="background: var(--accent-green); color: white; border: none; border-radius: 4px; padding: 0 12px; cursor: pointer; font-weight: bold; font-size: 12px; white-space: nowrap;">Train
+                            vs AI</button>
+                        <button id="btnResignReview"
+                            style="background: #b33430; color: white; border: none; border-radius: 4px; padding: 0 12px; cursor: pointer; font-weight: bold; font-size: 12px; white-space: nowrap; display: none;">Resign</button>
                     </div>
 
                     <div id="player-choice-panel" class="player-choice-panel" style="display: none;">
@@ -145,7 +229,9 @@
                     </div>
 
                     <div id="learning-hub" style="display: none; padding: 15px;">
-                        <h2 style="margin: 0 0 15px 0; color: #fff; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">🎓 Academy</h2>
+                        <h2
+                            style="margin: 0 0 15px 0; color: #fff; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+                            🎓 Academy</h2>
                         <div id="lesson-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
                     </div>
 
@@ -171,7 +257,16 @@
 
                         <div id="tab-coach" class="tab-content active">
                             <div class="coach-bubble">
-                                <div class="coach-avatar">🤖</div>
+                                <!--<div class="coach-avatar">🤖</div> -->
+                                <div class="coach-avatar"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"
+                                        viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)"
+                                        stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="3" y="11" width="18" height="10" rx="2" />
+                                        <circle cx="12" cy="5" r="2" />
+                                        <path d="M12 7v4" />
+                                        <line x1="8" y1="16" x2="8" y2="16" />
+                                        <line x1="16" y1="16" x2="16" y2="16" />
+                                    </svg></div>
                                 <div class="coach-content">
                                     <span id="coach-title">I'm ready!</span>
                                     <span id="coach-text">Load a PGN game to start your lesson.</span>
@@ -189,13 +284,19 @@
 
                         <div id="tab-review" class="tab-content" style="display: none; padding: 15px;">
                             <div id="auto-analyze-prompt" style="text-align: center; padding: 20px;">
-                                <button id="btnRunFullAnalysis" class="primary" style="width: 100%;">⚡ Run Game Report</button>
-                                <p id="analyze-warning-text" style="font-size: 11px; color: var(--text-muted); margin-top: 10px;">This will analyze all moves. Higher depth settings take longer.</p>
+                                <button id="btnRunFullAnalysis" class="primary" style="width: 100%;">⚡ Run Game
+                                    Report</button>
+                                <p id="analyze-warning-text"
+                                    style="font-size: 11px; color: var(--text-muted); margin-top: 10px;">This will
+                                    analyze all moves. Higher depth settings take longer.</p>
                             </div>
                             <div id="scorecard-container" style="display: none;"></div>
-                            <button id="btnReviewMistakes" class="primary" style="width: 100%; margin-top: 15px; display: none;">Learn From Mistakes</button>
-                            <button id="btnSaveGame" class="secondary" style="width: 100%; margin-top: 10px;">💾 Save to Library</button>
-                            <button id="btnExportPGN" class="secondary" style="width: 100%; margin-top: 10px;">📋 Copy Annotated PGN</button>
+                            <button id="btnReviewMistakes" class="primary"
+                                style="width: 100%; margin-top: 15px; display: none;">Learn From Mistakes</button>
+                            <button id="btnSaveGame" class="secondary" style="width: 100%; margin-top: 10px;">💾 Save to
+                                Library</button>
+                            <button id="btnExportPGN" class="secondary" style="width: 100%; margin-top: 10px;">📋 Copy
+                                Annotated PGN</button>
                         </div>
 
                         <div class="controls">
@@ -233,8 +334,10 @@
 
     <div id="game-over-modal" class="modal-overlay" style="display:none;">
         <div class="modal-content" style="max-width: 400px; text-align: center; padding: 30px 20px;">
-            <h2 id="game-over-title" style="margin: 0 0 10px 0; font-size: 24px; color: var(--accent-gold);">Game Over</h2>
-            <p style="color: var(--text-secondary); margin-bottom: 25px; font-size: 14px;">Would you like to review your game and find your mistakes?</p>
+            <h2 id="game-over-title" style="margin: 0 0 10px 0; font-size: 24px; color: var(--accent-gold);">Game Over
+            </h2>
+            <p style="color: var(--text-secondary); margin-bottom: 25px; font-size: 14px;">Would you like to review your
+                game and find your mistakes?</p>
             <div style="display: flex; gap: 10px; justify-content: center;">
                 <button id="btnModalReview" class="primary" style="flex: 1;">🔍 Review Game</button>
                 <button id="btnModalClose" class="secondary" style="flex: 1;">Close</button>
@@ -254,24 +357,30 @@
                     <label style="font-weight: 700; color: #fff; display: flex; justify-content: space-between;">
                         Engine Analysis Depth <span id="depth-display" style="color: var(--accent-green);">14</span>
                     </label>
-                    <p style="font-size: 11px; color: var(--text-muted); margin: 5px 0 10px;">Lower depth is faster. Higher depth is more accurate.</p>
-                    <input type="range" id="setting-depth" min="10" max="20" value="14" style="width: 100%; cursor: pointer;">
+                    <p style="font-size: 11px; color: var(--text-muted); margin: 5px 0 10px;">Lower depth is faster.
+                        Higher depth is more accurate.</p>
+                    <input type="range" id="setting-depth" min="10" max="20" value="14"
+                        style="width: 100%; cursor: pointer;">
                 </div>
 
                 <div class="setting-group" style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <div style="font-weight: 700; color: #fff;">Show Evaluation Bar</div>
-                        <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Display the live advantage bar next to the board.</div>
+                        <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Display the live
+                            advantage bar next to the board.</div>
                     </div>
-                    <input type="checkbox" id="setting-eval-bar" checked style="width: 18px; height: 18px; cursor: pointer;">
+                    <input type="checkbox" id="setting-eval-bar" checked
+                        style="width: 18px; height: 18px; cursor: pointer;">
                 </div>
 
                 <div class="setting-group" style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <div style="font-weight: 700; color: #fff;">Show Engine Arrows</div>
-                        <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Draw green arrows for the engine's suggested move.</div>
+                        <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Draw green arrows for
+                            the engine's suggested move.</div>
                     </div>
-                    <input type="checkbox" id="setting-arrows" checked style="width: 18px; height: 18px; cursor: pointer;">
+                    <input type="checkbox" id="setting-arrows" checked
+                        style="width: 18px; height: 18px; cursor: pointer;">
                 </div>
 
             </div>

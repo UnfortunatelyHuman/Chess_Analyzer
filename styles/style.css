@@ -46,6 +46,19 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ================================================================ */
+/* Sidebar Navigation */
+/* ================================================================ */
+.nav-item svg {
+  display: block;
+  margin: 0 auto;
+  transition: stroke 0.2s ease;
+}
+
+.nav-item:hover svg,
+.nav-item.active svg {
+  stroke: var(--accent-primary);
+}
 /* ================================================================
    APP SHELL
    ================================================================ */
@@ -72,6 +85,35 @@ body {
   margin-bottom: 40px;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   cursor: pointer;
+}
+/* --- Dynamic Theme Logo Sizing & Display --- */
+.sidebar-logo {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.theme-logo {
+  width: 40px; /* Adjust this number to make the logo bigger or smaller */
+  height: auto;
+  transition: opacity 0.2s ease;
+}
+
+/* 1. Default State (Dark Mode): Show Dark Logo, Hide Light Logo */
+.logo-light {
+  display: none;
+}
+.logo-dark {
+  display: block;
+}
+
+/* 2. Light State (Ivory Mode): Show Light Logo, Hide Dark Logo */
+body[data-theme="light"] .logo-dark {
+  display: none;
+}
+body[data-theme="light"] .logo-light {
+  display: block;
 }
 .sidebar-menu {
   display: flex;
@@ -1166,208 +1208,251 @@ textarea:focus {
 }
 
 /* =========================================
-   PHASE 35: MODERNIZATION & GLASSMORPHISM
+   PHASE 41.5: PIXEL-PERFECT IVORY & MIDNIGHT
    ========================================= */
 
-/* 1. Redefine root variables for translucency */
+/* Default: MIDNIGHT (Dark Mode) */
 :root {
-  --bg-main: #0f0f13;
-  --bg-panel: rgba(25, 25, 30, 0.65);
-  --bg-panel-alt: rgba(35, 35, 45, 0.5);
-  --border-color: rgba(255, 255, 255, 0.08);
-  --shadow-soft: 0 12px 40px 0 rgba(0, 0, 0, 0.4);
-  --glass-border: 1px solid rgba(255, 255, 255, 0.05);
-  --radius-md: 12px;
+  --bg-page: #161512;
+  --bg-panel: #262421;
+  --bg-panel-alt: #302e2b;
+  --border-color: #403d39;
+
+  --text-primary: #ffffff;
+  --text-secondary: #bababa;
+  --text-muted: #8b8987;
+
+  --accent-primary: #5c748c;
+  --accent-hover: #4d6b87;
+
+  /* FIXED: Slate-Blue Board */
+  --board-light: #7e8a9a;
+  --board-dark: #4e5e6e;
+
+  --radius-md: 6px;
+
+  /* Map legacy accent variables */
+  --accent-green: var(--accent-primary);
+  --accent-gold: var(--accent-hover);
 }
 
-/* 2. Add a subtle ambient background gradient */
+/* Override for IVORY (Light Mode) */
+body[data-theme="light"] {
+  --bg-page: #f0ede4;
+  --bg-panel: #ffffff;
+  --bg-panel-alt: #f7f6f1;
+  --border-color: #e2e0d8;
+
+  --text-primary: #1c1b1a;
+  --text-secondary: #5c5b59;
+  --text-muted: #8c8b89;
+
+  --accent-primary: #6b8299;
+  --accent-hover: #5c7f9d;
+
+  /* FIXED: Ivory Board */
+  --board-light: #f0ebd8;
+  --board-dark: #a1b0b2;
+}
+
+/* 1. Base Cleanup */
 body {
-  background: radial-gradient(circle at 15% 15%, #1f2133, var(--bg-main));
-  background-attachment: fixed;
-  color: #e0e0e0;
+  background: var(--bg-page);
+  color: var(--text-primary);
 }
 
-/* 3. Apply Glassmorphism to major panels and modals */
-.container,
+.app-header {
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: none;
+}
+
+.app-sidebar {
+  background: var(--bg-panel);
+  border-right: 1px solid var(--border-color);
+}
+
+/* 2. Flat, Clean Panels */
 .side-panel,
-.coach-panel,
-.modal-content,
-#settings-modal .modal-content,
-#game-over-modal .modal-content {
+.modal-content {
   background: var(--bg-panel) !important;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: var(--glass-border) !important;
-  box-shadow: var(--shadow-soft);
-  border-radius: var(--radius-md);
+  border-left: 1px solid var(--border-color);
+  box-shadow: none !important;
+  border-radius: 0;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
-/* 4. Smooth Button Animations */
-button {
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+.container,
+.coach-panel {
+  background: var(--bg-panel) !important;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
-  filter: brightness(1.1);
-}
-
-button:active {
-  transform: translateY(1px);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-}
-
-/* 5. Elevate the Sidebar Icons */
-.sidebar-menu .nav-item {
-  transition: all 0.3s ease !important;
-  border-radius: 12px;
-}
-
-.sidebar-menu .nav-item:hover {
-  background: rgba(255, 255, 255, 0.1) !important;
-  transform: scale(1.1);
-}
-
-.sidebar-menu .nav-item.active {
-  background: rgba(255, 255, 255, 0.15) !important;
-  box-shadow: inset 2px 0 0 var(--accent-green);
-}
-
-/* 6. Modern Custom Scrollbars */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.15);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 4px;
-  transition: background 0.2s;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
-}
-
-/* 7. Lesson Cards Hover Effects */
-.lesson-card {
-  border: 1px solid transparent !important;
-}
-.lesson-card:hover {
-  background: rgba(255, 255, 255, 0.08) !important;
-  border: var(--glass-border) !important;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-/* =========================================
-   PHASE 36: PREMIUM CHESSBOARD STYLING
-   ========================================= */
-
-/* Override default square colors to Obsidian & Charcoal */
+/* 3. The Board Aesthetics */
 .white-1e1d7 {
-  background-color: #1a1a24 !important;
-  color: #4a4a5e !important;
+  background-color: var(--board-light) !important;
+  color: var(--board-dark) !important;
 }
 
 .black-3c85d {
-  background-color: #0a0a0f !important;
-  color: #303040 !important;
+  background-color: var(--board-dark) !important;
+  color: var(--board-light) !important;
 }
 
-/* Add a subtle cyan/purple border to the board */
 #board {
-  border: 2px solid rgba(0, 229, 255, 0.2);
+  border: none;
   border-radius: 4px;
-  box-shadow: 0 0 30px rgba(112, 0, 255, 0.15), inset 0 0 20px rgba(0, 0, 0, 0.8);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   overflow: hidden;
 }
 
-/* Ensure suggested move highlights pop in neon */
-.highlight-suggested {
-  box-shadow: inset 0 0 0 3px var(--accent-green) !important;
-  background-color: rgba(0, 229, 255, 0.15) !important;
-}
-
-/* Make the pieces look like glowing holograms */
+/* Ensure pieces don't have weird glowing dropshadows anymore */
 img.piece-417db {
-  filter: drop-shadow(0px 4px 6px rgba(0, 0, 0, 0.8)) drop-shadow(0px 0px 3px rgba(0, 229, 255, 0.3));
-  transition: transform 0.1s ease;
+  filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.3));
+}
+img.piece-417db:active,
+.is-dragging {
+  filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.5)) !important;
 }
 
-img.piece-417db:active {
-  filter: drop-shadow(0px 8px 12px rgba(0, 0, 0, 0.9)) drop-shadow(0px 0px 8px rgba(0, 229, 255, 0.6));
+/* 4. Tab Structure (Native Software Look) */
+.tabs-container {
+  background: var(--bg-panel-alt);
+  border-bottom: 1px solid var(--border-color);
+  padding: 0;
+  display: flex;
 }
 
-/* =========================================
-   PHASE 37: LEGAL MOVE HIGHLIGHTS
-   ========================================= */
-
-/* Solid dot for moving to an empty square */
-.legal-hint-dot {
-  background-image: radial-gradient(rgba(0, 0, 0, 0.25) 20%, transparent 23%) !important;
+.tab-btn {
+  flex: 1;
+  background: transparent;
+  color: var(--text-secondary);
+  border: none;
+  border-bottom: 3px solid transparent;
+  padding: 14px 0;
+  font-weight: 700;
+  font-size: 13px;
+  border-radius: 0;
 }
 
-/* Hollow ring for capturing an enemy piece */
-.legal-hint-capture {
-  background-image: radial-gradient(transparent 55%, rgba(0, 0, 0, 0.3) 60%, rgba(0, 0, 0, 0.3) 70%, transparent 75%) !important;
+.tab-btn.active {
+  background: var(--bg-panel);
+  color: var(--text-primary);
+  border-bottom: 3px solid var(--accent-primary);
 }
 
-/* =========================================
-   PHASE 38: PREMOVES
-   ========================================= */
-
-.premove-highlight {
-  background-color: rgba(244, 42, 50, 0.5) !important;
+/* 5. Clean Player Profiles */
+.player-profile {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  margin-top: 10px;
 }
 
-/* =========================================
-   PHASE 39: OBSIDIAN & ICE THEME
-   ========================================= */
-
-:root {
-  --bg-main: #000000;
-  --bg-panel: rgba(10, 10, 12, 0.85);
-  --bg-panel-alt: rgba(18, 18, 22, 0.5);
-  --border-color: rgba(255, 255, 255, 0.04);
-  --glass-border: 1px solid rgba(255, 255, 255, 0.06);
-  --shadow-soft: 0 20px 50px 0 rgba(0, 0, 0, 0.7);
-
-  /* The New Accents */
-  --accent-green: #00E5FF;
-  --accent-gold: #7000FF;
-  --text-muted: #666677;
-}
-
-body {
-  background: #000000;
-  background-image: radial-gradient(circle at 50% 0%, #13151a, #000000 60%);
-}
-
-/* Make primary buttons glow slightly */
+/* 6. Primary Buttons */
 button.primary {
-  background: var(--accent-green) !important;
-  color: #000 !important;
-  font-weight: 800;
-  box-shadow: 0 0 15px rgba(0, 229, 255, 0.2);
+  background: var(--accent-primary) !important;
+  color: #fff !important;
+  border-radius: 6px;
+  box-shadow: none;
   border: none;
 }
 
 button.primary:hover {
-  box-shadow: 0 0 25px rgba(0, 229, 255, 0.4);
-  transform: translateY(-2px);
+  background: var(--accent-hover) !important;
+  transform: translateY(-1px);
 }
 
-/* Update the custom scrollbar to match */
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.08);
+/* 7. Smooth Button Animations */
+button {
+  transition: all 0.2s ease !important;
 }
+
+button:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+/* 8. Sidebar Icons */
+.sidebar-menu .nav-item {
+  color: var(--text-secondary);
+  border-radius: 8px;
+  transition: all 0.2s ease !important;
+}
+
+.sidebar-menu .nav-item.active,
+.sidebar-menu .nav-item:hover {
+  background: var(--bg-panel-alt) !important;
+  color: var(--text-primary);
+  box-shadow: none;
+  transform: none;
+}
+
+.sidebar-menu .nav-item.active::before {
+  background: var(--accent-primary);
+}
+
+/* 9. Modern Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(128, 128, 128, 0.25);
+  border-radius: 3px;
+}
+
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--accent-green);
+  background: rgba(128, 128, 128, 0.5);
+}
+
+/* 10. Lesson Cards */
+.lesson-card {
+  border: 1px solid var(--border-color) !important;
+  transition: all 0.2s ease;
+}
+.lesson-card:hover {
+  background: var(--bg-panel-alt) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* 11. Highlight & Move Indicators */
+.highlight-suggested {
+  box-shadow: inset 0 0 0 3px rgba(60, 90, 118, 0.8) !important;
+  background-color: rgba(60, 90, 118, 0.2) !important;
+}
+
+.legal-hint-dot {
+  background-image: radial-gradient(
+    rgba(0, 0, 0, 0.25) 20%,
+    transparent 23%
+  ) !important;
+}
+
+.legal-hint-capture {
+  background-image: radial-gradient(
+    transparent 55%,
+    rgba(0, 0, 0, 0.25) 60%,
+    rgba(0, 0, 0, 0.25) 70%,
+    transparent 75%
+  ) !important;
+}
+
+.premove-highlight {
+  background-color: rgba(226, 82, 65, 0.3) !important;
+  box-shadow: inset 0 0 0 2px rgba(226, 82, 65, 0.8) !important;
 }
