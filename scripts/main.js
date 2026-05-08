@@ -88,6 +88,8 @@ let timerInterval = null;
 let activeColor = "w";
 /** Premove state */
 let pendingPremove = null;
+/** Blindfold state */
+let isBlindfold = false;
 
 $(document).ready(function () {
   initEngine(handleEngineMessage);
@@ -799,6 +801,20 @@ $(document).ready(function () {
       localStorage.setItem("chessAnalyzerTheme", "ivory");
     }
   });
+
+  // --- Blindfold Mode ---
+  $("#btnBlindfold").on("click", function () {
+    isBlindfold = !isBlindfold;
+    if (isBlindfold) {
+      $("#board").addClass("blindfold-active");
+      $(this).find(".slash").show();
+      $(this).addClass("active");
+    } else {
+      $("#board").removeClass("blindfold-active");
+      $(this).find(".slash").hide();
+      $(this).removeClass("active");
+    }
+  });
 });
 
 // --- TOUCH SWIPE GESTURES ---
@@ -1382,6 +1398,12 @@ function handleEngineMessage(msg) {
   if (msg.startsWith("info ")) {
     let uiNeedsUpdate = false;
 
+    // Clear stale Multi-PV lines when engine restarts from depth 1
+    const earlyDepthMatch = msg.match(/depth (\d+)/);
+    if (earlyDepthMatch && parseInt(earlyDepthMatch[1]) <= 1) {
+      $("#multi-pv-container").empty();
+    }
+
     // 1. Check for Depth updates
     const depthMatch = msg.match(/depth (\d+)/);
     if (depthMatch) {
@@ -1427,6 +1449,42 @@ function handleEngineMessage(msg) {
       const readableLine = formatEngineLine(rawPv, game.fen());
       currentEnginePV = readableLine || rawPv;
       uiNeedsUpdate = true;
+    }
+
+    // 3b. Multi-PV rendering
+    if (msg.includes("multipv") && msg.includes("score")) {
+      let pvNumMatch = msg.match(/multipv (\d+)/);
+      let pvNum = pvNumMatch ? parseInt(pvNumMatch[1]) : 1;
+
+      let evalText = "";
+      if (msg.includes("score cp")) {
+        let cpM = msg.match(/score cp (-?\d+)/);
+        if (cpM) {
+          let val = parseInt(cpM[1]) / 100;
+          if (game.turn() === "b") val = -val;
+          evalText = (val > 0 ? "+" : "") + val.toFixed(2);
+        }
+      } else if (msg.includes("score mate")) {
+        let mateM = msg.match(/score mate (-?\d+)/);
+        if (mateM) {
+          let m = parseInt(mateM[1]);
+          if (game.turn() === "b") m = -m;
+          evalText = (m > 0 ? "+" : "") + "M" + Math.abs(m);
+        }
+      }
+
+      let pvStringMatch = msg.match(/ pv (.*)/);
+      let pvString = pvStringMatch ? pvStringMatch[1].split(" ").slice(0, 5).join(" ") : "";
+
+      if ($("#multi-pv-container").length) {
+        if ($(`#pv-line-${pvNum}`).length === 0) {
+          $("#multi-pv-container").append(
+            `<div id="pv-line-${pvNum}" class="pv-line"><span class="pv-rank">${pvNum}.</span><span class="pv-eval"></span><span class="pv-moves"></span></div>`
+          );
+        }
+        $(`#pv-line-${pvNum} .pv-eval`).text(evalText);
+        $(`#pv-line-${pvNum} .pv-moves`).text(pvString);
+      }
     }
 
     // 4. Update the Analysis Tab if anything changed

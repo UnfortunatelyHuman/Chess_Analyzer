@@ -92,6 +92,16 @@
             <!-- Create a new group for the bottom buttons -->
             <div
                 style="margin-top: auto; margin-bottom: 20px; display: flex; flex-direction: column; gap: 20px; width: 100%;">
+                <!-- Blindfold Mode -->
+                <button id="btnBlindfold" class="nav-item" title="Blindfold Mode">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                        <line x1="3" y1="3" x2="21" y2="21" class="slash" style="display: none;"/>
+                    </svg>
+                </button>
+
                 <!-- Theme Toggle -->
                 <button id="btnThemeToggle" class="nav-item" title="Toggle Theme">
                     <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
@@ -115,7 +125,7 @@
         <div id="main-content-wrapper">
 
             <header class="app-header">
-                <div class="header-title">Chess Analyzer Pro</div>
+                <div class="header-title">Chess Analyzer</div>
                 <div class="header-user">
                     <span class="user-badge">unfortunatelyhuman</span>
                     <div class="user-avatar-small"></div>
@@ -280,6 +290,7 @@
                                 <span id="analysis-depth">Depth 0</span>
                             </div>
                             <div id="analysis-line" class="analysis-line">Waiting for engine...</div>
+                            <div id="multi-pv-container" style="margin-top: 0; font-family: monospace; font-size: 13px; display: flex; flex-direction: column; gap: 0;"></div>
                         </div>
 
                         <div id="tab-review" class="tab-content" style="display: none; padding: 15px;">

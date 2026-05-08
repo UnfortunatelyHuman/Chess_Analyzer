@@ -26,6 +26,7 @@ export function initEngine(onMessageCallback) {
 
 export function analyzePosition(fen, depth = 18) {
   if (!isReady) return;
+  stockfish.postMessage("setoption name MultiPV value 3");
   stockfish.postMessage("position fen " + fen);
   stockfish.postMessage("go depth " + depth);
 }

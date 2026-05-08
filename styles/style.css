@@ -59,6 +59,22 @@ body {
 .nav-item.active svg {
   stroke: var(--accent-primary);
 }
+
+/* --- Header Title Theme Sync --- */
+
+/* 1. Default State (Midnight / Dark Mode) */
+.header-title {
+  color: var(--text-primary); /* Uses the white/light-grey variable */
+  transition: color 0.3s ease; /* Makes it fade smoothly when toggled */
+}
+
+/* 2. Toggled State (Ivory / Light Mode) */
+body[data-theme="light"] .header-title {
+  color: var(
+    --accent-primary
+  ); /* Uses the slate-blue variable from the light theme */
+  /* Alternatively, use var(--text-primary) for dark grey text */
+}
 /* ================================================================
    APP SHELL
    ================================================================ */
@@ -1455,4 +1471,50 @@ button:active {
 .premove-highlight {
   background-color: rgba(226, 82, 65, 0.3) !important;
   box-shadow: inset 0 0 0 2px rgba(226, 82, 65, 0.8) !important;
+}
+
+/* =========================================
+   PHASE 42: GRANDMASTER TOOLS
+   ========================================= */
+
+/* Blindfold Mode Logic */
+#board.blindfold-active img.piece-417db {
+  opacity: 0 !important;
+  transition: opacity 0.3s ease;
+}
+
+/* Multi-PV Line Styling */
+.pv-line {
+  background: var(--bg-panel-alt);
+  padding: 8px 12px;
+  border-left: 3px solid var(--accent-primary);
+  display: flex;
+  gap: 10px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.4;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.pv-line:first-child {
+  border-top: 1px solid var(--border-color);
+}
+
+.pv-rank {
+  color: var(--text-muted);
+  font-weight: 700;
+  min-width: 16px;
+}
+
+.pv-eval {
+  font-weight: 700;
+  color: var(--text-primary);
+  min-width: 50px;
+}
+
+.pv-moves {
+  color: var(--text-secondary);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
