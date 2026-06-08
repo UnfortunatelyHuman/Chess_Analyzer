@@ -24,11 +24,16 @@ export function initEngine(onMessageCallback) {
     .catch((err) => console.error("Failed to load engine:", err));
 }
 
-export function analyzePosition(fen, depth = 18) {
+export function analyzePosition(fen, depth = 18, multiPV = 3) {
   if (!isReady) return;
-  stockfish.postMessage("setoption name MultiPV value 3");
+  stockfish.postMessage("setoption name MultiPV value " + multiPV);
   stockfish.postMessage("position fen " + fen);
   stockfish.postMessage("go depth " + depth);
+}
+
+export function setMultiPV(lines) {
+  if (!isReady) return;
+  stockfish.postMessage("setoption name MultiPV value " + lines);
 }
 
 // Limit Stockfish's power during Sparring Mode (level 0-20)

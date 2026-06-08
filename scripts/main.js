@@ -1,6 +1,6 @@
 // main.js - The Controller
 
-import { initEngine, analyzePosition, setEngineSkillLevel } from "./engine.js";
+import { initEngine, analyzePosition, setEngineSkillLevel, setMultiPV } from "./engine.js";
 import {
   updateCoach,
   updateEvalBar,
@@ -36,9 +36,12 @@ let userSettings = JSON.parse(
   localStorage.getItem("chessAnalyzerSettings"),
 ) || {
   engineDepth: 14,
+  engineLines: 3,
   showEvalBar: true,
   showArrows: true,
 };
+// Ensure engineLines exists for users with old saved settings
+if (!userSettings.engineLines) userSettings.engineLines = 3;
 let moves = [];
 let clockTimes = [];
 let moveClassifications = [];
@@ -207,7 +210,7 @@ $(document).ready(function () {
     );
     currentEnginePV = "Calculating...";
     updateAnalysisView(currentEngineScore, currentEngineDepth, currentEnginePV);
-    analyzePosition(game.fen(), userSettings.engineDepth);
+    analyzePosition(game.fen(), userSettings.engineDepth, userSettings.engineLines);
   });
 
   $("#btnSparringMode").on("click", function () {
@@ -322,6 +325,8 @@ $(document).ready(function () {
   function applySettings() {
     $("#depth-display").text(userSettings.engineDepth);
     $("#setting-depth").val(userSettings.engineDepth);
+    $("#lines-display").text(userSettings.engineLines);
+    $("#setting-lines").val(userSettings.engineLines);
     $("#setting-eval-bar").prop("checked", userSettings.showEvalBar);
     $("#setting-arrows").prop("checked", userSettings.showArrows);
 
@@ -353,19 +358,30 @@ $(document).ready(function () {
     $(".nav-item[title='Analyze']").addClass("active");
 
     userSettings.engineDepth = parseInt($("#setting-depth").val());
+    userSettings.engineLines = parseInt($("#setting-lines").val());
     userSettings.showEvalBar = $("#setting-eval-bar").is(":checked");
     userSettings.showArrows = $("#setting-arrows").is(":checked");
+
+    // Immediately update Stockfish MultiPV
+    setMultiPV(userSettings.engineLines);
+    // Clear stale PV lines that exceed the new count
+    $("#multi-pv-container").empty();
 
     applySettings();
 
     if (moves.length > 0) {
       updateCoach(
         "Settings Saved",
-        `Engine depth set to ${userSettings.engineDepth}.`,
+        `Depth: ${userSettings.engineDepth} · Lines: ${userSettings.engineLines}`,
         "neutral",
       );
-      analyzePosition(game.fen(), userSettings.engineDepth);
+      analyzePosition(game.fen(), userSettings.engineDepth, userSettings.engineLines);
     }
+  });
+
+  // Live preview for sliders
+  $("#setting-lines").on("input", function () {
+    $("#lines-display").text($(this).val());
   });
 
   $("#setting-depth").on("input", function () {
@@ -986,7 +1002,7 @@ function onDrop(source, target) {
   updateCoach("Thinking...", "Analyzing custom variation...", "neutral");
   currentEnginePV = "Calculating...";
   updateAnalysisView(currentEngineScore, currentEngineDepth, currentEnginePV);
-  analyzePosition(game.fen(), userSettings.engineDepth);
+  analyzePosition(game.fen(), userSettings.engineDepth, userSettings.engineLines);
 
   // Clock: add increment for the player who just moved, switch, start on first move
   if (isSparringMode) {
@@ -1100,7 +1116,7 @@ function loadGame() {
         currentEngineDepth,
         currentEnginePV,
       );
-      analyzePosition(game.fen(), userSettings.engineDepth);
+      analyzePosition(game.fen(), userSettings.engineDepth, userSettings.engineLines);
     });
   } else {
     updateCoach(
@@ -1157,7 +1173,7 @@ function nextMove() {
   updateCoach("Thinking...", "Calculating the best moves...", "neutral");
   currentEnginePV = "Calculating...";
   updateAnalysisView(currentEngineScore, currentEngineDepth, currentEnginePV);
-  analyzePosition(game.fen(), userSettings.engineDepth);
+  analyzePosition(game.fen(), userSettings.engineDepth, userSettings.engineLines);
 }
 
 function prevMove() {
@@ -1187,7 +1203,7 @@ function prevMove() {
     );
     currentEnginePV = "Calculating...";
     updateAnalysisView(currentEngineScore, currentEngineDepth, currentEnginePV);
-    analyzePosition(game.fen(), userSettings.engineDepth);
+    analyzePosition(game.fen(), userSettings.engineDepth, userSettings.engineLines);
   }
 }
 
@@ -1221,7 +1237,7 @@ function jumpToMove(targetIndex) {
   if (lastMove && lastMove.captured) playFeedback("capture");
   else playFeedback("move");
   updateCoach("Thinking...", "Analyzing this position...", "neutral");
-  analyzePosition(game.fen(), userSettings.engineDepth);
+  analyzePosition(game.fen(), userSettings.engineDepth, userSettings.engineLines);
 }
 
 /** Jump back to the starting position. */
@@ -1244,7 +1260,7 @@ function jumpToStart() {
     "Back to the beginning. Click Next Move to step through.",
     "neutral",
   );
-  analyzePosition(game.fen(), userSettings.engineDepth);
+  analyzePosition(game.fen(), userSettings.engineDepth, userSettings.engineLines);
 }
 
 /** Flip the board and swap the UI orientation. */
@@ -1476,7 +1492,7 @@ function handleEngineMessage(msg) {
       let pvStringMatch = msg.match(/ pv (.*)/);
       let pvString = pvStringMatch ? pvStringMatch[1].split(" ").slice(0, 5).join(" ") : "";
 
-      if ($("#multi-pv-container").length) {
+      if ($("#multi-pv-container").length && pvNum <= userSettings.engineLines) {
         if ($(`#pv-line-${pvNum}`).length === 0) {
           $("#multi-pv-container").append(
             `<div id="pv-line-${pvNum}" class="pv-line"><span class="pv-rank">${pvNum}.</span><span class="pv-eval"></span><span class="pv-moves"></span></div>`
@@ -1535,7 +1551,7 @@ function handleEngineMessage(msg) {
         currentEngineDepth,
         currentEnginePV,
       );
-      analyzePosition(game.fen(), userSettings.engineDepth);
+      analyzePosition(game.fen(), userSettings.engineDepth, userSettings.engineLines);
       return;
     }
 
@@ -1585,7 +1601,7 @@ function handleEngineMessage(msg) {
             currentEngineDepth,
             currentEnginePV,
           );
-          analyzePosition(game.fen(), userSettings.engineDepth);
+          analyzePosition(game.fen(), userSettings.engineDepth, userSettings.engineLines);
 
           // Clock: add increment for AI, switch back to player
           if (isSparringMode) {
@@ -1623,7 +1639,7 @@ function handleEngineMessage(msg) {
                 updateTimerUI();
               }
 
-              analyzePosition(game.fen(), userSettings.engineDepth);
+              analyzePosition(game.fen(), userSettings.engineDepth, userSettings.engineLines);
               checkGameOver();
             }
 
@@ -2000,5 +2016,5 @@ function analyzeNextMoveInLoop() {
 
   // 3. Make the move FIRST, then ask the engine to analyze the resulting board
   game.move(moves[autoAnalyzeIndex].san);
-  analyzePosition(game.fen(), userSettings.engineDepth);
+  analyzePosition(game.fen(), userSettings.engineDepth, userSettings.engineLines);
 }
